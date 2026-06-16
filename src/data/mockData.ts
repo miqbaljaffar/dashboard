@@ -13,10 +13,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 98,
     attendanceRate: 0.99,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-002",
@@ -30,10 +27,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 96,
     attendanceRate: 0.98,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-003",
@@ -47,10 +41,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 100,
     attendanceRate: 1.0,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-004",
@@ -64,10 +55,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 100,
     attendanceRate: 1.0,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-005",
@@ -81,10 +69,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 92,
     attendanceRate: 0.96,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-006",
@@ -96,12 +81,9 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 90, // adjusted down due to misconduct
+    behaviorScore: 90,
     attendanceRate: 1.0,
-    violationsCount: 1,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 1
   },
   {
     id: "UTB-2026-007",
@@ -115,10 +97,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 100,
     attendanceRate: 1.0,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-008",
@@ -132,10 +111,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 95,
     attendanceRate: 0.97,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-009",
@@ -149,10 +125,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 100,
     attendanceRate: 1.0,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-010",
@@ -166,10 +139,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 90,
     attendanceRate: 0.94,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-011",
@@ -183,10 +153,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 93,
     attendanceRate: 0.95,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-012",
@@ -200,10 +167,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 96,
     attendanceRate: 0.98,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-013",
@@ -217,10 +181,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 94,
     attendanceRate: 0.96,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-014",
@@ -232,12 +193,9 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 95, // adjusted down for misconduct resolved
+    behaviorScore: 95,
     attendanceRate: 1.0,
-    violationsCount: 1,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 1
   },
   {
     id: "UTB-2026-015",
@@ -251,10 +209,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 95,
     attendanceRate: 0.97,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-016",
@@ -268,10 +223,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 89,
     attendanceRate: 0.91,
-    violationsCount: 1,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 1
   },
   {
     id: "UTB-2026-017",
@@ -285,10 +237,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 91,
     attendanceRate: 0.93,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-018",
@@ -302,10 +251,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 97,
     attendanceRate: 0.99,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-019",
@@ -319,10 +265,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 95,
     attendanceRate: 0.96,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-020",
@@ -336,10 +279,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 100,
     attendanceRate: 1.0,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-021",
@@ -353,10 +293,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 98,
     attendanceRate: 0.98,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-022",
@@ -370,10 +307,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 93,
     attendanceRate: 0.94,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-023",
@@ -387,10 +321,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 90,
     attendanceRate: 0.91,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-024",
@@ -404,10 +335,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 94,
     attendanceRate: 0.97,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-025",
@@ -421,10 +349,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 92,
     attendanceRate: 0.93,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-026",
@@ -438,10 +363,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 88,
     attendanceRate: 0.92,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-027",
@@ -455,10 +377,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 99,
     attendanceRate: 0.99,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-028",
@@ -472,10 +391,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 91,
     attendanceRate: 0.95,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-029",
@@ -489,10 +405,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 85,
     attendanceRate: 0.90,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   },
   {
     id: "UTB-2026-030",
@@ -506,10 +419,7 @@ export const initialStudents: Student[] = [
     status: "Active",
     behaviorScore: 96,
     attendanceRate: 0.98,
-    violationsCount: 0,
-    assignmentSubmitted: false,
-    quizScore: null,
-    examScore: null
+    violationsCount: 0
   }
 ];
 
@@ -533,12 +443,6 @@ const generateInitialAttendance = (): AttendanceRecord[] => {
 };
 
 export const initialAttendance: AttendanceRecord[] = generateInitialAttendance();
-
-// Export empty arrays for deleted schemas to prevent import/compilation errors
-export const initialQuizzes: any[] = [];
-export const initialAssignments: any[] = [];
-export const initialDailyReports: any[] = [];
-export const initialDormRooms: any[] = [];
 
 export const initialIncidences: BehavioralIncidence[] = [
   {

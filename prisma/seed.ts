@@ -32,9 +32,6 @@ async function main() {
         behaviorScore: student.behaviorScore,
         attendanceRate: student.attendanceRate,
         violationsCount: student.violationsCount,
-        assignmentSubmitted: student.assignmentSubmitted,
-        quizScore: student.quizScore,
-        examScore: student.examScore,
       },
     });
   }

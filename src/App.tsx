@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Student, AttendanceRecord, BehavioralIncidence, BehavioralReward } from './types';
+import { Student, AttendanceRecord, BehavioralIncidence, BehavioralReward, Assignment, GradeColumn } from './types';
 import { initialStudents, initialAttendance, initialIncidences, initialRewards } from './data/mockData';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
 import AttendanceView from './components/AttendanceView';
 import AcademiaView from './components/AcademiaView';
 import DisciplineView from './components/DisciplineView';
+import StudentsView from './components/StudentsView';
 import { GraduationCap } from 'lucide-react';
 
 export default function App() {
@@ -16,6 +17,10 @@ export default function App() {
   const [attendanceState, setAttendanceState] = useState<AttendanceRecord[]>(initialAttendance);
   const [incidentsState, setIncidentsState] = useState<BehavioralIncidence[]>(initialIncidences);
   const [rewardsState, setRewardsState] = useState<BehavioralReward[]>(initialRewards);
+  
+  // Dynamic Academic States
+  const [assignmentsState, setAssignmentsState] = useState<Assignment[]>([]);
+  const [gradesState, setGradesState] = useState<GradeColumn[]>([]);
 
   // Sync data from database backend on load
   useEffect(() => {
@@ -28,6 +33,8 @@ export default function App() {
         setAttendanceState(data.attendance);
         setIncidentsState(data.incidents);
         setRewardsState(data.rewards);
+        setAssignmentsState(data.assignments || []);
+        setGradesState(data.quizzes || []); // backend maps grades to quizzes key
       } catch (err) {
         console.warn('Backend server not reachable, using offline mock data:', err);
       }
@@ -35,7 +42,15 @@ export default function App() {
     loadData();
   }, []);
 
-  // Update student scores / assignment checkbox
+  const handleAddStudent = (newStudent: Student) => {
+    setStudentsState(prev => [...prev, newStudent]);
+    fetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newStudent),
+    }).catch(err => console.error('Failed to sync student create to DB:', err));
+  };
+
   const handleUpdateStudent = (updatedStudent: Student) => {
     setStudentsState(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
     fetch(`/api/students/${updatedStudent.id}`, {
@@ -43,6 +58,16 @@ export default function App() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(updatedStudent),
     }).catch(err => console.error('Failed to sync student update to DB:', err));
+  };
+
+  const handleDeleteStudent = (id: string) => {
+    fetch(`/api/students/${id}`, {
+      method: 'DELETE'
+    })
+      .then(() => {
+        setStudentsState(prev => prev.filter(s => s.id !== id));
+      })
+      .catch(err => console.error('Failed to sync student delete to DB:', err));
   };
 
   const handleUpdateAttendance = (record: AttendanceRecord) => {
@@ -93,6 +118,119 @@ export default function App() {
       });
   };
 
+  // Dynamic Assignments CRUD handlers
+  const handleCreateAssignment = (title: string, cohort: string, dueDate: string) => {
+    fetch('/api/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, cohort, dueDate })
+    })
+      .then(res => res.json())
+      .then(newAss => {
+        setAssignmentsState(prev => [...prev, newAss]);
+      })
+      .catch(err => console.error('Failed to create assignment:', err));
+  };
+
+  const handleUpdateAssignment = (id: string, title: string, dueDate: string) => {
+    fetch(`/api/assignments/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, dueDate })
+    })
+      .then(res => res.json())
+      .then(updated => {
+        setAssignmentsState(prev => prev.map(a => a.id === id ? updated : a));
+      })
+      .catch(err => console.error('Failed to update assignment:', err));
+  };
+
+  const handleDeleteAssignment = (id: string) => {
+    fetch(`/api/assignments/${id}`, {
+      method: 'DELETE'
+    })
+      .then(() => {
+        setAssignmentsState(prev => prev.filter(a => a.id !== id));
+      })
+      .catch(err => console.error('Failed to delete assignment:', err));
+  };
+
+  const handleToggleSubmission = (submissionId: string, assignmentId: string, submitted: boolean) => {
+    // Optimistic UI toggle
+    setAssignmentsState(prev => prev.map(a => {
+      if (a.id === assignmentId && a.submissions) {
+        return {
+          ...a,
+          submissions: a.submissions.map(sub => sub.id === submissionId ? { ...sub, submitted } : sub)
+        };
+      }
+      return a;
+    }));
+
+    fetch(`/api/submissions/${submissionId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ submitted })
+    }).catch(err => console.error('Failed to toggle submission:', err));
+  };
+
+  // Dynamic Grade Columns CRUD handlers
+  const handleCreateGradeColumn = (title: string, type: 'Kuis' | 'Ulangan', cohort: string, date: string) => {
+    fetch('/api/grades', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, type, cohort, date })
+    })
+      .then(res => res.json())
+      .then(newCol => {
+        setGradesState(prev => [...prev, newCol]);
+      })
+      .catch(err => console.error('Failed to create grade column:', err));
+  };
+
+  const handleUpdateGradeColumn = (id: string, title: string, date: string) => {
+    fetch(`/api/grades/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, date })
+    })
+      .then(res => res.json())
+      .then(updated => {
+        setGradesState(prev => prev.map(g => g.id === id ? updated : g));
+      })
+      .catch(err => console.error('Failed to update grade column:', err));
+  };
+
+  const handleDeleteGradeColumn = (id: string) => {
+    fetch(`/api/grades/${id}`, {
+      method: 'DELETE'
+    })
+      .then(() => {
+        setGradesState(prev => prev.filter(g => g.id !== id));
+      })
+      .catch(err => console.error('Failed to delete grade column:', err));
+  };
+
+  const handleUpdateStudentGrade = (gradeId: string, columnId: string, score: number | null) => {
+    // Optimistic UI score update
+    setGradesState(prev => prev.map(g => {
+      if (g.id === columnId && g.scores) {
+        return {
+          ...g,
+          scores: g.scores.map(s => s.id === gradeId ? { ...s, score } : s)
+        };
+      }
+      return g;
+    }));
+
+    fetch(`/api/student-grades/${gradeId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ score })
+    }).catch(err => console.error('Failed to update score:', err));
+  };
+
+  // Behavior logs CRUD handlers
   const handleLogIncident = (inc: BehavioralIncidence) => {
     setIncidentsState(prev => [inc, ...prev]);
 
@@ -109,21 +247,37 @@ export default function App() {
           setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
         }
       })
-      .catch(err => {
-        console.error('Failed to sync incident to DB:', err);
-        // Fallback local point deduction
-        setStudentsState(prev => prev.map(s => {
-          if (s.id === inc.studentId) {
-            const nextScore = Math.max(0, s.behaviorScore - inc.pointsDeducted);
-            return {
-              ...s,
-              behaviorScore: nextScore,
-              violationsCount: s.violationsCount + 1
-            };
-          }
-          return s;
-        }));
-      });
+      .catch(err => console.error('Failed to sync incident:', err));
+  };
+
+  const handleUpdateIncident = (id: string, incidentData: Partial<BehavioralIncidence>) => {
+    fetch(`/api/incidents/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(incidentData)
+    })
+      .then(res => res.json())
+      .then(data => {
+        setIncidentsState(prev => prev.map(inc => inc.id === id ? data.incident : inc));
+        if (data.student) {
+          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
+        }
+      })
+      .catch(err => console.error('Failed to update incident:', err));
+  };
+
+  const handleDeleteIncident = (id: string) => {
+    fetch(`/api/incidents/${id}`, {
+      method: 'DELETE'
+    })
+      .then(res => res.json())
+      .then(data => {
+        setIncidentsState(prev => prev.filter(inc => inc.id !== id));
+        if (data.student) {
+          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
+        }
+      })
+      .catch(err => console.error('Failed to delete incident:', err));
   };
 
   const handleLogReward = (rew: BehavioralReward) => {
@@ -142,26 +296,43 @@ export default function App() {
           setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
         }
       })
-      .catch(err => {
-        console.error('Failed to sync reward to DB:', err);
-        // Fallback local points restoration
-        setStudentsState(prev => prev.map(s => {
-          if (s.id === rew.studentId) {
-            const nextScore = Math.min(100, s.behaviorScore + rew.pointsAdded);
-            return {
-              ...s,
-              behaviorScore: nextScore
-            };
-          }
-          return s;
-        }));
-      });
+      .catch(err => console.error('Failed to sync reward:', err));
+  };
+
+  const handleUpdateReward = (id: string, rewardData: Partial<BehavioralReward>) => {
+    fetch(`/api/rewards/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rewardData)
+    })
+      .then(res => res.json())
+      .then(data => {
+        setRewardsState(prev => prev.map(rew => rew.id === id ? data.reward : rew));
+        if (data.student) {
+          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
+        }
+      })
+      .catch(err => console.error('Failed to update reward:', err));
+  };
+
+  const handleDeleteReward = (id: string) => {
+    fetch(`/api/rewards/${id}`, {
+      method: 'DELETE'
+    })
+      .then(res => res.json())
+      .then(data => {
+        setRewardsState(prev => prev.filter(rew => rew.id !== id));
+        if (data.student) {
+          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
+        }
+      })
+      .catch(err => console.error('Failed to delete reward:', err));
   };
 
   // Helper count badges
   const atRiskStudentsCount = studentsState.filter(s => 
     s.status === 'Active' && 
-    (s.attendanceRate < 0.82 || (s.quizScore !== null && s.quizScore < 70) || s.behaviorScore < 70)
+    (s.attendanceRate < 0.82 || s.behaviorScore < 70)
   ).length;
 
   const activeViolationsCount = incidentsState.filter(i => i.status === 'Active').length;
@@ -175,7 +346,18 @@ export default function App() {
             students={studentsState}
             attendance={attendanceState}
             incidents={incidentsState}
+            assignments={assignmentsState}
+            grades={gradesState}
             onNavigate={(id) => setActiveTab(id)}
+          />
+        );
+      case 'students':
+        return (
+          <StudentsView
+            students={studentsState}
+            onAddStudent={handleAddStudent}
+            onUpdateStudent={handleUpdateStudent}
+            onDeleteStudent={handleDeleteStudent}
           />
         );
       case 'attendance':
@@ -190,7 +372,16 @@ export default function App() {
         return (
           <AcademiaView
             students={studentsState}
-            onUpdateStudent={handleUpdateStudent}
+            assignments={assignmentsState}
+            grades={gradesState}
+            onCreateAssignment={handleCreateAssignment}
+            onUpdateAssignment={handleUpdateAssignment}
+            onDeleteAssignment={handleDeleteAssignment}
+            onToggleSubmission={handleToggleSubmission}
+            onCreateGradeColumn={handleCreateGradeColumn}
+            onUpdateGradeColumn={handleUpdateGradeColumn}
+            onDeleteGradeColumn={handleDeleteGradeColumn}
+            onUpdateStudentGrade={handleUpdateStudentGrade}
           />
         );
       case 'discipline':
@@ -200,8 +391,12 @@ export default function App() {
             incidents={incidentsState}
             rewards={rewardsState}
             onLogIncident={handleLogIncident}
+            onUpdateIncident={handleUpdateIncident}
+            onDeleteIncident={handleDeleteIncident}
             onLogReward={handleLogReward}
-            role="ADMIN" // System level admin
+            onUpdateReward={handleUpdateReward}
+            onDeleteReward={handleDeleteReward}
+            role="ADMIN"
           />
         );
       default:

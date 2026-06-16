@@ -1,5 +1,5 @@
 import React from 'react';
-import { Student, AttendanceRecord, BehavioralIncidence } from '../types';
+import { Student, AttendanceRecord, BehavioralIncidence, Assignment, GradeColumn } from '../types';
 import {
   Users,
   Clock,
@@ -8,8 +8,7 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  TrendingUp,
-  GraduationCap
+  TrendingUp
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -31,6 +30,8 @@ interface DashboardViewProps {
   students: Student[];
   attendance: AttendanceRecord[];
   incidents: BehavioralIncidence[];
+  assignments: Assignment[];
+  grades: GradeColumn[];
   onNavigate: (tab: string) => void;
 }
 
@@ -38,6 +39,8 @@ export default function DashboardView({
   students,
   attendance,
   incidents,
+  assignments,
+  grades,
   onNavigate
 }: DashboardViewProps) {
   
@@ -51,24 +54,55 @@ export default function DashboardView({
     ? Math.round((activeStudents.reduce((acc, s) => acc + s.attendanceRate, 0) / activeStudents.length) * 100)
     : 0;
 
-  // Average Quiz Score (ignoring null/empty)
-  const studentsWithQuiz = activeStudents.filter(s => s.quizScore !== null && s.quizScore !== undefined);
-  const avgQuizScore = studentsWithQuiz.length
-    ? parseFloat((studentsWithQuiz.reduce((acc, s) => acc + (s.quizScore || 0), 0) / studentsWithQuiz.length).toFixed(1))
-    : 0;
+  // Average Quiz Score across all grade columns of type 'Kuis'
+  const quizColumns = grades.filter(g => g.type === 'Kuis');
+  let totalQuizScore = 0;
+  let totalQuizCount = 0;
+  quizColumns.forEach(g => {
+    g.scores?.forEach(s => {
+      if (s.score !== null && s.score !== undefined) {
+        totalQuizScore += s.score;
+        totalQuizCount++;
+      }
+    });
+  });
+  const avgQuizScore = totalQuizCount ? parseFloat((totalQuizScore / totalQuizCount).toFixed(1)) : 0;
 
-  // Average Exam Score (ignoring null/empty)
-  const studentsWithExam = activeStudents.filter(s => s.examScore !== null && s.examScore !== undefined);
-  const avgExamScore = studentsWithExam.length
-    ? parseFloat((studentsWithExam.reduce((acc, s) => acc + (s.examScore || 0), 0) / studentsWithExam.length).toFixed(1))
-    : 0;
+  // Average Exam Score across all grade columns of type 'Ulangan'
+  const examColumns = grades.filter(g => g.type === 'Ulangan');
+  let totalExamScore = 0;
+  let totalExamCount = 0;
+  examColumns.forEach(g => {
+    g.scores?.forEach(s => {
+      if (s.score !== null && s.score !== undefined) {
+        totalExamScore += s.score;
+        totalExamCount++;
+      }
+    });
+  });
+  const avgExamScore = totalExamCount ? parseFloat((totalExamScore / totalExamCount).toFixed(1)) : 0;
 
-  // Students at Risk (attendance < 82%, quiz score < 70, or behavior score < 70)
-  const atRiskStudents = activeStudents.filter(s => 
-    s.attendanceRate < 0.82 || 
-    (s.quizScore !== null && s.quizScore < 70) ||
-    s.behaviorScore < 70
-  );
+  // For each student, find their average quiz score across all quiz columns
+  const studentQuizAverages = activeStudents.map(student => {
+    let sum = 0;
+    let count = 0;
+    quizColumns.forEach(g => {
+      const match = g.scores?.find(s => s.studentId === student.id);
+      if (match && match.score !== null && match.score !== undefined) {
+        sum += match.score;
+        count++;
+      }
+    });
+    return count ? sum / count : null;
+  });
+
+  // Students at Risk (attendance < 82%, quiz score average < 70, or behavior score < 70)
+  const atRiskStudents = activeStudents.filter((s, idx) => {
+    const avgQuiz = studentQuizAverages[idx];
+    return s.attendanceRate < 0.82 || 
+           (avgQuiz !== null && avgQuiz < 70) ||
+           s.behaviorScore < 70;
+  });
   const atRiskCount = atRiskStudents.length;
 
   // Chart 1: Attendance Trend Over 7 Days (Line Chart)
@@ -84,11 +118,11 @@ export default function DashboardView({
 
   // Chart 2: Quiz Score Distribution (Histogram style)
   const quizScoreDistData = [
-    { range: '90-100 (A)', students: activeStudents.filter(s => s.quizScore !== null && s.quizScore !== undefined && s.quizScore >= 90).length },
-    { range: '80-89 (B)', students: activeStudents.filter(s => s.quizScore !== null && s.quizScore !== undefined && s.quizScore >= 80 && s.quizScore < 90).length },
-    { range: '70-79 (C)', students: activeStudents.filter(s => s.quizScore !== null && s.quizScore !== undefined && s.quizScore >= 70 && s.quizScore < 80).length },
-    { range: '<70 (D/At Risk)', students: activeStudents.filter(s => s.quizScore !== null && s.quizScore !== undefined && s.quizScore < 70).length },
-    { range: 'Belum Dinilai', students: activeStudents.filter(s => s.quizScore === null || s.quizScore === undefined).length }
+    { range: '90-100 (A)', students: studentQuizAverages.filter(avg => avg !== null && avg >= 90).length },
+    { range: '80-89 (B)', students: studentQuizAverages.filter(avg => avg !== null && avg >= 80 && avg < 90).length },
+    { range: '70-79 (C)', students: studentQuizAverages.filter(avg => avg !== null && avg >= 70 && avg < 80).length },
+    { range: '<70 (D/At Risk)', students: studentQuizAverages.filter(avg => avg !== null && avg < 70).length },
+    { range: 'Belum Dinilai', students: studentQuizAverages.filter(avg => avg === null).length }
   ];
 
   // Chart 3: Student Risk Distribution (Pie Chart)
@@ -99,10 +133,18 @@ export default function DashboardView({
   ];
 
   // Lists: Top performing students by behavior and quiz combined
-  const topPerformers = [...activeStudents]
-    .filter(s => s.quizScore !== null)
-    .sort((a, b) => ((b.quizScore || 0) + b.behaviorScore) - ((a.quizScore || 0) + a.behaviorScore))
-    .slice(0, 4);
+  const topPerformers = activeStudents
+    .map((student, idx) => {
+      const avg = studentQuizAverages[idx];
+      return { student, avg };
+    })
+    .filter(item => item.avg !== null)
+    .sort((a, b) => ((b.avg || 0) + b.student.behaviorScore) - ((a.avg || 0) + a.student.behaviorScore))
+    .slice(0, 4)
+    .map(item => ({
+      ...item.student,
+      quizScore: Math.round(item.avg || 0)
+    }));
 
   const recentAccidents = incidents.slice(0, 4);
 
@@ -282,7 +324,7 @@ export default function DashboardView({
           <div>
             <div className="mb-3">
               <h4 className="text-xs font-bold text-slate-800">4. Honor Roll: Siswa Berprestasi Terbaik</h4>
-              <p className="text-[10px] text-slate-400">Diurutkan berdasarkan nilai kuis dan poin kedisiplinan tertinggi</p>
+              <p className="text-[10px] text-slate-400">Diurutkan berdasarkan nilai kuis rata-rata dan poin perilaku</p>
             </div>
             <div className="space-y-2.5 mt-2">
               {topPerformers.length === 0 ? (
@@ -296,7 +338,7 @@ export default function DashboardView({
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-[10px] text-slate-500">{student.classroom}</span>
-                      <span className="font-bold text-green-700 font-mono">Nilai Kuis: {student.quizScore}</span>
+                      <span className="font-bold text-green-700 font-mono">Kuis Avg: {student.quizScore}</span>
                       <span className="text-[10px] bg-green-50 text-green-700 border border-green-100 px-1.5 py-0.5 rounded font-mono font-bold">
                         {student.behaviorScore} pts
                       </span>

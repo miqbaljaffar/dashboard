@@ -19,13 +19,12 @@ model Student {
   behaviorScore       Int
   attendanceRate      Float
   violationsCount     Int
-  assignmentSubmitted Boolean  @default(false)
-  quizScore           Int?
-  examScore           Int?
 
   attendance   AttendanceRecord[]
   incidents    BehavioralIncidence[]
   rewards      BehavioralReward[]
+  submissions  AssignmentSubmission[]
+  grades       StudentGrade[]
 }
 
 model AttendanceRecord {
@@ -40,6 +39,49 @@ model AttendanceRecord {
   student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, date])
+}
+
+model Assignment {
+  id          String   @id @default(uuid())
+  title       String
+  cohort      String
+  dueDate     String
+  
+  submissions AssignmentSubmission[]
+}
+
+model AssignmentSubmission {
+  id           String   @id @default(uuid())
+  assignmentId String
+  studentId    String
+  submitted    Boolean  @default(false)
+
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+
+  @@unique([assignmentId, studentId])
+}
+
+model GradeColumn {
+  id        String   @id @default(uuid())
+  title     String
+  type      String   // "Kuis" or "Ulangan"
+  cohort    String
+  date      String
+  
+  scores    StudentGrade[]
+}
+
+model StudentGrade {
+  id            String   @id @default(uuid())
+  gradeColumnId String
+  studentId     String
+  score         Int?     // Nullable for empty input initially
+
+  student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  gradeColumn   GradeColumn @relation(fields: [gradeColumnId], references: [id], onDelete: Cascade)
+
+  @@unique([gradeColumnId, studentId])
 }
 
 model BehavioralIncidence {

@@ -1,153 +1,186 @@
 import React, { useState, useEffect } from 'react';
-import { Student } from '../types';
+import { Student, Assignment, GradeColumn } from '../types';
 import {
   BookOpen,
-  CheckSquare,
   Award,
-  Users,
-  Search,
+  Plus,
+  Trash2,
+  Edit,
+  Save,
   CheckCircle,
-  FileCheck2,
-  Trash
+  FileCheck,
+  Search,
+  Users,
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 
 interface AcademiaViewProps {
   students: Student[];
-  onUpdateStudent: (student: Student) => void;
+  assignments: Assignment[];
+  grades: GradeColumn[];
+  onCreateAssignment: (title: string, cohort: string, dueDate: string) => void;
+  onUpdateAssignment: (id: string, title: string, dueDate: string) => void;
+  onDeleteAssignment: (id: string) => void;
+  onToggleSubmission: (submissionId: string, assignmentId: string, submitted: boolean) => void;
+  onCreateGradeColumn: (title: string, type: 'Kuis' | 'Ulangan', cohort: string, date: string) => void;
+  onUpdateGradeColumn: (id: string, title: string, date: string) => void;
+  onDeleteGradeColumn: (id: string) => void;
+  onUpdateStudentGrade: (gradeId: string, columnId: string, score: number | null) => void;
 }
 
 export default function AcademiaView({
   students,
-  onUpdateStudent
+  assignments,
+  grades,
+  onCreateAssignment,
+  onUpdateAssignment,
+  onDeleteAssignment,
+  onToggleSubmission,
+  onCreateGradeColumn,
+  onUpdateGradeColumn,
+  onDeleteGradeColumn,
+  onUpdateStudentGrade
 }: AcademiaViewProps) {
   
+  const [activeSubTab, setActiveSubTab] = useState<'assignments' | 'grades'>('assignments');
   const [selectedCohort, setSelectedCohort] = useState('Cohort 24');
   const [searchQuery, setSearchQuery] = useState('');
-  
-  // Local states for inputs to make typing smooth without waiting for API roundtrips
-  const [localScores, setLocalScores] = useState<{
-    [studentId: string]: { quiz: string; exam: string }
-  }>({});
 
-  // Initialize/sync local input states when students list changes
+  // Selected item states
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(null);
+  const [selectedGradeColId, setSelectedGradeColId] = useState<string | null>(null);
+
+  // Form input states
+  const [newTitle, setNewTitle] = useState('');
+  const [newDate, setNewDate] = useState(new Date().toISOString().split('T')[0]);
+  const [newGradeType, setNewGradeType] = useState<'Kuis' | 'Ulangan'>('Kuis');
+
+  // Inline editing states for items (Assignments / Grade Columns)
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editDate, setEditDate] = useState('');
+
+  // Local inputs state for student scores (for smooth typing)
+  const [localScores, setLocalScores] = useState<{ [gradeId: string]: string }>({});
+
+  // Filter lists based on cohort
+  const cohortAssignments = assignments.filter(a => a.cohort === selectedCohort);
+  const cohortGrades = grades.filter(g => g.cohort === selectedCohort);
+
+  // Selected details
+  const activeAssignment = assignments.find(a => a.id === selectedAssignmentId);
+  const activeGradeCol = grades.find(g => g.id === selectedGradeColId);
+
+  // Sync local inputs when active grade column changes
   useEffect(() => {
-    const newLocalScores: typeof localScores = {};
-    students.forEach(s => {
-      newLocalScores[s.id] = {
-        quiz: s.quizScore !== null && s.quizScore !== undefined ? String(s.quizScore) : '',
-        exam: s.examScore !== null && s.examScore !== undefined ? String(s.examScore) : ''
-      };
-    });
-    setLocalScores(newLocalScores);
-  }, [students]);
+    if (activeGradeCol?.scores) {
+      const scoresMap: typeof localScores = {};
+      activeGradeCol.scores.forEach(scoreObj => {
+        scoresMap[scoreObj.id] = scoreObj.score !== null ? String(scoreObj.score) : '';
+      });
+      setLocalScores(scoresMap);
+    }
+  }, [activeGradeCol, grades]);
 
-  // Filter students based on cohort and search query
-  const cohortStudents = students.filter(s => 
-    s.status === 'Active' && 
-    s.cohort === selectedCohort &&
-    (s.name.toLowerCase().includes(searchQuery.toLowerCase()) || s.id.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
-
-  // Statistics calculations for the selected cohort
-  const totalStudents = students.filter(s => s.status === 'Active' && s.cohort === selectedCohort).length;
-  
-  const activeCohortStudents = students.filter(s => s.status === 'Active' && s.cohort === selectedCohort);
-  const submittedCount = activeCohortStudents.filter(s => s.assignmentSubmitted).length;
-  const submissionRate = totalStudents ? Math.round((submittedCount / totalStudents) * 100) : 0;
-
-  // Calculate averages (filtering out null scores)
-  const studentsWithQuiz = activeCohortStudents.filter(s => s.quizScore !== null && s.quizScore !== undefined);
-  const avgQuizScore = studentsWithQuiz.length
-    ? Math.round(studentsWithQuiz.reduce((acc, s) => acc + (s.quizScore || 0), 0) / studentsWithQuiz.length)
-    : 0;
-
-  const studentsWithExam = activeCohortStudents.filter(s => s.examScore !== null && s.examScore !== undefined);
-  const avgExamScore = studentsWithExam.length
-    ? Math.round(studentsWithExam.reduce((acc, s) => acc + (s.examScore || 0), 0) / studentsWithExam.length)
-    : 0;
-
-  // Handler for assignment checkbox toggle
-  const handleAssignmentToggle = (student: Student) => {
-    const updated = {
-      ...student,
-      assignmentSubmitted: !student.assignmentSubmitted
-    };
-    onUpdateStudent(updated);
+  // Handle creates
+  const handleCreateAssignmentSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+    onCreateAssignment(newTitle, selectedCohort, newDate);
+    setNewTitle('');
   };
 
-  // Handler for text input change (updates local state only)
-  const handleScoreInputChange = (studentId: string, type: 'quiz' | 'exam', value: string) => {
-    // Only allow digits or empty string
+  const handleCreateGradeColSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim()) return;
+    onCreateGradeColumn(newTitle, newGradeType, selectedCohort, newDate);
+    setNewTitle('');
+  };
+
+  // Handle inline edits save
+  const handleSaveEdit = (id: string, type: 'assignment' | 'grade') => {
+    if (!editTitle.trim()) return;
+    if (type === 'assignment') {
+      onUpdateAssignment(id, editTitle, editDate);
+    } else {
+      onUpdateGradeColumn(id, editTitle, editDate);
+    }
+    setEditingItemId(null);
+  };
+
+  const startEditing = (id: string, title: string, date: string) => {
+    setEditingItemId(id);
+    setEditTitle(title);
+    setEditDate(date);
+  };
+
+  // Score typing validation
+  const handleScoreChange = (gradeId: string, value: string) => {
     if (value !== '' && !/^\d+$/.test(value)) return;
-    
-    // Allow up to 100
     if (value !== '' && parseInt(value) > 100) return;
 
     setLocalScores(prev => ({
       ...prev,
-      [studentId]: {
-        ...prev[studentId],
-        [type]: value
-      }
+      [gradeId]: value
     }));
   };
 
-  // Handler to persist the score to the database (on blur or enter key)
-  const persistScore = (student: Student, type: 'quiz' | 'exam') => {
-    const localVal = localScores[student.id]?.[type] || '';
+  // Score save trigger
+  const handleScoreBlur = (gradeId: string, currentScore: number | null, columnId: string) => {
+    const localVal = localScores[gradeId] ?? '';
     const parsedVal = localVal === '' ? null : parseInt(localVal);
-    
-    // Check if the value actually changed
-    const dbVal = type === 'quiz' ? student.quizScore : student.examScore;
-    if (dbVal === parsedVal) return;
 
-    const updated = {
-      ...student,
-      [type === 'quiz' ? 'quizScore' : 'examScore']: parsedVal
-    };
-    onUpdateStudent(updated);
+    if (currentScore === parsedVal) return;
+    onUpdateStudentGrade(gradeId, columnId, parsedVal);
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, student: Student, type: 'quiz' | 'exam') => {
+  const handleScoreKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, gradeId: string, currentScore: number | null, columnId: string) => {
     if (e.key === 'Enter') {
       e.currentTarget.blur();
     }
   };
 
+  // Reset selected when cohort or tab changes
+  useEffect(() => {
+    setSelectedAssignmentId(null);
+    setSelectedGradeColId(null);
+    setEditingItemId(null);
+  }, [selectedCohort, activeSubTab]);
+
   return (
     <div className="space-y-6">
       
-      {/* Header and Filter Controls */}
+      {/* Tab Switcher & Filters */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h2 className="text-xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-blue-600" />
-            Tugas & Nilai (Academic Hub)
-          </h2>
-          <p className="text-xs text-slate-500 mt-1">
-            Kelola pengumpulan tugas harian, nilai kuis, dan nilai ulangan/ujian untuk setiap siswa.
-          </p>
+        
+        {/* Navigation Tabs */}
+        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+          <button
+            onClick={() => setActiveSubTab('assignments')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              activeSubTab === 'assignments' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <BookOpen className="h-4 w-4 text-blue-600" />
+            Pengumpulan Tugas
+          </button>
+          <button
+            onClick={() => setActiveSubTab('grades')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
+              activeSubTab === 'grades' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+            }`}
+          >
+            <Award className="h-4 w-4 text-amber-500" />
+            Nilai Kuis & Ulangan
+          </button>
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-          {/* Search Input */}
-          <div className="relative flex-1 sm:w-60">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-3.5 w-3.5 text-slate-400" />
-            </span>
-            <input
-              type="text"
-              placeholder="Cari siswa atau ID..."
-              className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-medium focus:outline-hidden focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-colors"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-
-          {/* Cohort Selector */}
+        {/* Global Filters */}
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+          <span className="text-xs text-slate-400 font-medium hidden sm:inline">Pilih Kelas:</span>
           <select
-            className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-blue-500 transition-colors cursor-pointer"
+            className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-blue-500 transition cursor-pointer"
             value={selectedCohort}
             onChange={(e) => setSelectedCohort(e.target.value)}
           >
@@ -158,179 +191,401 @@ export default function AcademiaView({
         </div>
       </div>
 
-      {/* KPI Stats Widgets */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Main Master-Detail Stage */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        {/* Card 1: Total Students */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Total Siswa Aktif</span>
-            <h4 className="text-2xl font-bold text-slate-900 mt-1">{totalStudents}</h4>
-            <p className="text-[9px] text-slate-500 mt-0.5">Terdaftar di {selectedCohort}</p>
-          </div>
-          <div className="p-2.5 bg-blue-50 text-blue-600 rounded-lg">
-            <Users className="h-5 w-5" />
-          </div>
-        </div>
+        {/* LEFT COLUMN: LIST PANEL (MASTER) */}
+        <div className="lg:col-span-4 space-y-6">
+          
+          {/* Create Item Panel */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs">
+            <h3 className="text-xs font-bold text-slate-900 border-b border-slate-100 pb-2.5 uppercase">
+              {activeSubTab === 'assignments' ? 'Buat Tugas Baru' : 'Buat Kolom Kuis / Ulangan'}
+            </h3>
+            
+            <form 
+              onSubmit={activeSubTab === 'assignments' ? handleCreateAssignmentSubmit : handleCreateGradeColSubmit}
+              className="space-y-4 mt-3"
+            >
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Judul / Materi *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder={activeSubTab === 'assignments' ? "Contoh: Menulis Kanji L12" : "Contoh: Kuis Hiragana L1"}
+                  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs focus:outline-hidden focus:border-blue-500 focus:bg-white transition-colors"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                />
+              </div>
 
-        {/* Card 2: Assignments Submitted */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Tugas Terkumpul</span>
-            <h4 className="text-2xl font-bold text-slate-900 mt-1">{submissionRate}%</h4>
-            <p className="text-[9px] text-slate-500 mt-0.5">{submittedCount} dari {totalStudents} Siswa</p>
-          </div>
-          <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
-            <CheckSquare className="h-5 w-5" />
-          </div>
-        </div>
+              <div className="grid grid-cols-2 gap-3">
+                {activeSubTab === 'grades' && (
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Jenis</label>
+                    <select
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-700 cursor-pointer"
+                      value={newGradeType}
+                      onChange={(e) => setNewGradeType(e.target.value as any)}
+                    >
+                      <option value="Kuis">Kuis</option>
+                      <option value="Ulangan">Ulangan</option>
+                    </select>
+                  </div>
+                )}
+                <div className={activeSubTab === 'assignments' ? "col-span-2" : "col-span-1"}>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    {activeSubTab === 'assignments' ? 'Batas Waktu (Deadline)' : 'Tanggal'}
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-xs font-medium focus:outline-hidden"
+                    value={newDate}
+                    onChange={(e) => setNewDate(e.target.value)}
+                  />
+                </div>
+              </div>
 
-        {/* Card 3: Quiz Average */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Rata-Rata Kuis</span>
-            <h4 className="text-2xl font-bold text-slate-900 mt-1">{avgQuizScore || '-'}</h4>
-            <p className="text-[9px] text-slate-500 mt-0.5">{studentsWithQuiz.length} siswa dinilai</p>
+              <button
+                type="submit"
+                className="w-full p-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-sm transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                Tambahkan
+              </button>
+            </form>
           </div>
-          <div className="p-2.5 bg-amber-50 text-amber-600 rounded-lg">
-            <Award className="h-5 w-5 text-amber-500" />
-          </div>
-        </div>
 
-        {/* Card 4: Exam Average */}
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs flex items-center justify-between">
-          <div>
-            <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Rata-Rata Ulangan</span>
-            <h4 className="text-2xl font-bold text-slate-900 mt-1">{avgExamScore || '-'}</h4>
-            <p className="text-[9px] text-slate-500 mt-0.5">{studentsWithExam.length} siswa dinilai</p>
-          </div>
-          <div className="p-2.5 bg-violet-50 text-violet-600 rounded-lg">
-            <FileCheck2 className="h-5 w-5" />
-          </div>
-        </div>
+          {/* List panel */}
+          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs space-y-4">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider border-b border-slate-100 pb-2">
+              {activeSubTab === 'assignments' ? 'Daftar Tugas Aktif' : 'Daftar Kuis & Ulangan'}
+            </h3>
 
-      </div>
-
-      {/* Main Student Grades Grid */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden">
-        
-        {/* Table Title Bar */}
-        <div className="px-5 py-4 border-b border-slate-100 bg-slate-50/50 flex justify-between items-center">
-          <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-            Lembar Penilaian & Tugas Siswa
-          </h3>
-          <span className="text-[10px] text-slate-500 font-mono bg-slate-100 px-2 py-0.5 rounded">
-            Auto-save: perubahan disimpan saat keluar kolom (blur)
-          </span>
-        </div>
-
-        {cohortStudents.length === 0 ? (
-          /* Empty State */
-          <div className="p-12 text-center">
-            <div className="h-12 w-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto text-slate-400 mb-3">
-              <BookOpen className="h-6 w-6" />
-            </div>
-            <h4 className="text-sm font-bold text-slate-800">Tidak ada data siswa</h4>
-            <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-              Tidak ditemukan siswa aktif untuk {selectedCohort} yang cocok dengan pencarian Anda.
-            </p>
-          </div>
-        ) : (
-          /* Students Data Table */
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[9px] bg-slate-50/50 select-none">
-                  <th className="py-3 px-4">Nama Siswa</th>
-                  <th className="py-3 px-4 text-center w-40">Pengumpulan Tugas</th>
-                  <th className="py-3 px-4 text-center w-40">Nilai Kuis</th>
-                  <th className="py-3 px-4 text-center w-40">Nilai Ulangan</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {cohortStudents.map((st) => {
-                  const studentQuiz = localScores[st.id]?.quiz ?? '';
-                  const studentExam = localScores[st.id]?.exam ?? '';
-
-                  return (
-                    <tr key={st.id} className="hover:bg-slate-50/40 transition-colors">
-                      
-                      {/* Name Card */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className={`h-8 w-8 rounded-full font-bold flex items-center justify-center text-xs ${
-                            st.gender === 'Male' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'
-                          }`}>
-                            {st.name.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-bold text-slate-900">{st.name}</p>
-                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">
-                              {st.id} • {st.classroom}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* Assignment Checkbox */}
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="inline-flex items-center justify-center">
-                          <label className="relative flex items-center cursor-pointer">
+            <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
+              {activeSubTab === 'assignments' ? (
+                cohortAssignments.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-6">Belum ada tugas untuk kelas ini.</p>
+                ) : (
+                  cohortAssignments.map(a => {
+                    const isSelected = selectedAssignmentId === a.id;
+                    const isEditing = editingItemId === a.id;
+                    
+                    return (
+                      <div
+                        key={a.id}
+                        onClick={() => !isEditing && setSelectedAssignmentId(a.id)}
+                        className={`p-3 border rounded-lg transition-all flex flex-col gap-2 ${
+                          isSelected 
+                            ? 'border-blue-500 bg-blue-50/20' 
+                            : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-white cursor-pointer'
+                        }`}
+                      >
+                        {isEditing ? (
+                          <div className="space-y-2" onClick={e => e.stopPropagation()}>
                             <input
-                              type="checkbox"
-                              className="sr-only peer"
-                              checked={st.assignmentSubmitted}
-                              onChange={() => handleAssignmentToggle(st)}
+                              type="text"
+                              className="w-full border border-slate-200 rounded-md p-1 text-xs"
+                              value={editTitle}
+                              onChange={e => setEditTitle(e.target.value)}
                             />
-                            <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
-                            <span className="ml-2 text-[10px] font-semibold text-slate-500 w-16 text-left select-none">
-                              {st.assignmentSubmitted ? 'Terkumpul' : 'Belum'}
-                            </span>
-                          </label>
-                        </div>
-                      </td>
-
-                      {/* Quiz Score Input */}
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="inline-flex items-center gap-2">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="-"
-                            className="w-16 text-center py-1 bg-slate-50 border border-slate-200 rounded-md font-semibold font-mono text-slate-800 focus:outline-hidden focus:border-blue-500 focus:bg-white transition-colors"
-                            value={studentQuiz}
-                            onChange={(e) => handleScoreInputChange(st.id, 'quiz', e.target.value)}
-                            onBlur={() => persistScore(st, 'quiz')}
-                            onKeyDown={(e) => handleKeyDown(e, st, 'quiz')}
-                          />
-                          <span className="text-[10px] font-bold text-slate-400 font-mono w-4">/100</span>
-                        </div>
-                      </td>
-
-                      {/* Exam Score Input */}
-                      <td className="py-3.5 px-4 text-center">
-                        <div className="inline-flex items-center gap-2">
-                          <input
-                            type="text"
-                            inputMode="numeric"
-                            placeholder="-"
-                            className="w-16 text-center py-1 bg-slate-50 border border-slate-200 rounded-md font-semibold font-mono text-slate-800 focus:outline-hidden focus:border-blue-500 focus:bg-white transition-colors"
-                            value={studentExam}
-                            onChange={(e) => handleScoreInputChange(st.id, 'exam', e.target.value)}
-                            onBlur={() => persistScore(st, 'exam')}
-                            onKeyDown={(e) => handleKeyDown(e, st, 'exam')}
-                          />
-                          <span className="text-[10px] font-bold text-slate-400 font-mono w-4">/100</span>
-                        </div>
-                      </td>
-
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                            <input
+                              type="date"
+                              className="w-full border border-slate-200 rounded-md p-1 text-xs"
+                              value={editDate}
+                              onChange={e => setEditDate(e.target.value)}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={() => setEditingItemId(null)}
+                                className="px-2 py-0.5 border border-slate-200 rounded text-[10px] text-slate-500 font-semibold"
+                              >
+                                Batal
+                              </button>
+                              <button
+                                onClick={() => handleSaveEdit(a.id, 'assignment')}
+                                className="px-2.5 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold flex items-center gap-0.5"
+                              >
+                                <Save className="h-3 w-3" /> Simpan
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="min-w-0">
+                              <h4 className="font-bold text-slate-800 text-xs truncate">{a.title}</h4>
+                              <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                <Calendar className="h-3 w-3 shrink-0" />
+                                DL: {a.dueDate}
+                              </p>
+                            </div>
+                            <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                              <button 
+                                onClick={() => startEditing(a.id, a.title, a.dueDate)}
+                                className="p-1 text-slate-400 hover:text-blue-600 rounded-md hover:bg-slate-100 transition"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if(confirm('Hapus tugas ini? Semua status pengumpulan siswa akan hilang.')) {
+                                    onDeleteAssignment(a.id);
+                                    if(selectedAssignmentId === a.id) setSelectedAssignmentId(null);
+                                  }
+                                }}
+                                className="p-1 text-slate-400 hover:text-red-600 rounded-md hover:bg-slate-100 transition"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )
+              ) : (
+                cohortGrades.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-6">Belum ada kuis/ulangan untuk kelas ini.</p>
+                ) : (
+                  cohortGrades.map(g => {
+                    const isSelected = selectedGradeColId === g.id;
+                    const isEditing = editingItemId === g.id;
+                    
+                    return (
+                      <div
+                        key={g.id}
+                        onClick={() => !isEditing && setSelectedGradeColId(g.id)}
+                        className={`p-3 border rounded-lg transition-all flex flex-col gap-2 ${
+                          isSelected 
+                            ? 'border-amber-500 bg-amber-50/10' 
+                            : 'border-slate-200 hover:border-slate-300 bg-slate-50/50 hover:bg-white cursor-pointer'
+                        }`}
+                      >
+                        {isEditing ? (
+                          <div className="space-y-2" onClick={e => e.stopPropagation()}>
+                            <input
+                              type="text"
+                              className="w-full border border-slate-200 rounded-md p-1 text-xs"
+                              value={editTitle}
+                              onChange={e => setEditTitle(e.target.value)}
+                            />
+                            <input
+                              type="date"
+                              className="w-full border border-slate-200 rounded-md p-1 text-xs"
+                              value={editDate}
+                              onChange={e => setEditDate(e.target.value)}
+                            />
+                            <div className="flex gap-2 justify-end">
+                              <button
+                                onClick={() => setEditingItemId(null)}
+                                className="px-2 py-0.5 border border-slate-200 rounded text-[10px] text-slate-500 font-semibold"
+                              >
+                                Batal
+                              </button>
+                              <button
+                                onClick={() => handleSaveEdit(g.id, 'grade')}
+                                className="px-2.5 py-0.5 bg-blue-600 text-white rounded text-[10px] font-bold flex items-center gap-0.5"
+                              >
+                                <Save className="h-3 w-3" /> Simpan
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex justify-between items-start gap-2">
+                            <div className="min-w-0">
+                              <span className={`text-[9px] font-bold px-1 rounded-sm ${
+                                g.type === 'Kuis' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-violet-50 text-violet-700 border border-violet-100'
+                              }`}>
+                                {g.type}
+                              </span>
+                              <h4 className="font-bold text-slate-800 text-xs truncate mt-1">{g.title}</h4>
+                              <p className="text-[10px] text-slate-400 mt-0.5 flex items-center gap-1">
+                                <Calendar className="h-3 w-3 shrink-0" />
+                                {g.date}
+                              </p>
+                            </div>
+                            <div className="flex gap-1 shrink-0" onClick={e => e.stopPropagation()}>
+                              <button 
+                                onClick={() => startEditing(g.id, g.title, g.date)}
+                                className="p-1 text-slate-400 hover:text-blue-600 rounded-md hover:bg-slate-100 transition"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </button>
+                              <button 
+                                onClick={() => {
+                                  if(confirm('Hapus kolom nilai ini? Semua nilai siswa didalamnya akan hilang.')) {
+                                    onDeleteGradeColumn(g.id);
+                                    if(selectedGradeColId === g.id) setSelectedGradeColId(null);
+                                  }
+                                }}
+                                className="p-1 text-slate-400 hover:text-red-600 rounded-md hover:bg-slate-100 transition"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )
+              )}
+            </div>
           </div>
-        )}
+
+        </div>
+
+        {/* RIGHT COLUMN: DETAILS SHEET (DETAIL) */}
+        <div className="lg:col-span-8 bg-white border border-slate-200 rounded-xl p-5 shadow-2xs min-h-[400px] flex flex-col">
+          
+          {activeSubTab === 'assignments' ? (
+            /* ASSIGNMENT SUBMISSIONS SHEET */
+            !activeAssignment ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 select-none">
+                <div className="h-12 w-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                  <FileCheck className="h-6 w-6" />
+                </div>
+                <h4 className="text-xs font-bold text-slate-700">Pilih Tugas Terlebih Dahulu</h4>
+                <p className="text-[10px] text-slate-400 max-w-[240px] mt-1 leading-normal">
+                  Klik salah satu judul tugas di kolom kiri untuk menampilkan lembar presensi pengumpulan tugas siswa.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 flex-1 flex flex-col">
+                <div className="border-b border-slate-150 pb-3 flex justify-between items-center shrink-0">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">{activeAssignment.title}</h3>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Kelas: {selectedCohort} • Batas: {activeAssignment.dueDate}</p>
+                  </div>
+                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                    Tugas Aktif
+                  </span>
+                </div>
+
+                {/* Submissions Table */}
+                <div className="overflow-x-auto flex-1">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-450 uppercase font-bold text-[9px] bg-slate-50/50">
+                        <th className="py-2.5 px-3">Nama Siswa</th>
+                        <th className="py-2.5 px-3 text-center w-40">Status Pengumpulan</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {students.filter(s => s.status === 'Active' && s.cohort === selectedCohort).map(student => {
+                        const sub = activeAssignment.submissions?.find(s => s.studentId === student.id);
+                        
+                        return (
+                          <tr key={student.id} className="hover:bg-slate-55/20 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <p className="font-bold text-slate-900">{student.name}</p>
+                              <p className="text-[10px] text-slate-455 font-mono">{student.id} • {student.classroom}</p>
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              {sub ? (
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    className="sr-only peer"
+                                    checked={sub.submitted}
+                                    onChange={() => onToggleSubmission(sub.id, activeAssignment.id, !sub.submitted)}
+                                  />
+                                  <div className="w-9 h-5 bg-slate-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                                  <span className="ml-2 text-[10px] font-semibold text-slate-500 w-16 text-left select-none">
+                                    {sub.submitted ? 'Terkumpul' : 'Belum'}
+                                  </span>
+                                </label>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 font-medium italic">Record missing</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
+          ) : (
+            /* GRADES AND SCORES SHEET */
+            !activeGradeCol ? (
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 select-none">
+                <div className="h-12 w-12 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mb-3">
+                  <Award className="h-6 w-6" />
+                </div>
+                <h4 className="text-xs font-bold text-slate-700">Pilih Kolom Nilai Terlebih Dahulu</h4>
+                <p className="text-[10px] text-slate-400 max-w-[240px] mt-1 leading-normal">
+                  Klik salah satu judul kuis/ulangan di kolom kiri untuk menampilkan lembar penginputan nilai siswa.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4 flex-1 flex flex-col">
+                <div className="border-b border-slate-150 pb-3 flex justify-between items-center shrink-0">
+                  <div>
+                    <h3 className="font-bold text-slate-900 text-sm">
+                      [{activeGradeCol.type}] {activeGradeCol.title}
+                    </h3>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Kelas: {selectedCohort} • Tanggal: {activeGradeCol.date}</p>
+                  </div>
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
+                    activeGradeCol.type === 'Kuis' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-violet-50 text-violet-700 border-violet-100'
+                  }`}>
+                    {activeGradeCol.type}
+                  </span>
+                </div>
+
+                {/* Scores Input Table */}
+                <div className="overflow-x-auto flex-1">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="border-b border-slate-100 text-slate-450 uppercase font-bold text-[9px] bg-slate-50/50">
+                        <th className="py-2.5 px-3">Nama Siswa</th>
+                        <th className="py-2.5 px-3 text-center w-40">Input Nilai</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {students.filter(s => s.status === 'Active' && s.cohort === selectedCohort).map(student => {
+                        const scoreObj = activeGradeCol.scores?.find(s => s.studentId === student.id);
+                        const displayVal = scoreObj ? (localScores[scoreObj.id] ?? '') : '';
+
+                        return (
+                          <tr key={student.id} className="hover:bg-slate-55/20 transition-colors">
+                            <td className="py-2.5 px-3">
+                              <p className="font-bold text-slate-900">{student.name}</p>
+                              <p className="text-[10px] text-slate-455 font-mono">{student.id} • {student.classroom}</p>
+                            </td>
+                            <td className="py-2.5 px-3 text-center">
+                              {scoreObj ? (
+                                <div className="inline-flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    inputMode="numeric"
+                                    placeholder="-"
+                                    className="w-16 text-center py-1 bg-slate-50 border border-slate-200 rounded-md font-semibold font-mono text-slate-800 focus:outline-hidden focus:border-blue-500 focus:bg-white transition-colors"
+                                    value={displayVal}
+                                    onChange={(e) => handleScoreChange(scoreObj.id, e.target.value)}
+                                    onBlur={() => handleScoreBlur(scoreObj.id, scoreObj.score, activeGradeCol.id)}
+                                    onKeyDown={(e) => handleScoreKeyDown(e, scoreObj.id, scoreObj.score, activeGradeCol.id)}
+                                  />
+                                  <span className="text-[10px] font-bold text-slate-400 font-mono">/100</span>
+                                </div>
+                              ) : (
+                                <span className="text-[10px] text-slate-400 font-medium italic">Record missing</span>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )
+          )}
+
+        </div>
 
       </div>
 

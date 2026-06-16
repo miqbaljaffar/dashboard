@@ -1,6 +1,7 @@
 import React from 'react';
 import {
   LayoutDashboard,
+  Users,
   CalendarCheck,
   BookOpen,
   ShieldAlert,
@@ -21,6 +22,7 @@ export default function Sidebar({
   
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
+    { id: 'students', label: 'Data Siswa', icon: Users },
     { id: 'attendance', label: 'Kehadiran (Attendance)', icon: CalendarCheck },
     { id: 'academia', label: 'Tugas & Nilai', icon: BookOpen },
     { id: 'discipline', label: 'Kedisiplinan & Perilaku', icon: ShieldAlert, badge: totalViolationsCount }

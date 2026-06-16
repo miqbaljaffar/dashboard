@@ -10,17 +10,14 @@ export interface Student {
   name: string;
   gender: 'Male' | 'Female';
   age: number;
-  cohort: string; // e.g., "Cohort 24"
-  classroom: string; // e.g., "Sakura Glass"
+  cohort: string;
+  classroom: string;
   enrollmentDate: string;
   graduationTarget: string;
   status: 'Active' | 'Graduated' | 'Leave' | 'Dropped';
   behaviorScore: number; // 0 - 100
   attendanceRate: number; // e.g., 0.94 (94%)
   violationsCount: number;
-  assignmentSubmitted: boolean;
-  quizScore: number | null;
-  examScore: number | null;
 }
 
 export interface AttendanceRecord {
@@ -30,6 +27,37 @@ export interface AttendanceRecord {
   classSession: 'Present' | 'Late' | 'Sick' | 'Permission' | 'Absent';
   eveningRollCall: 'Present' | 'Late' | 'Sick' | 'Permission' | 'Absent';
   notes?: string;
+}
+
+export interface Assignment {
+  id: string;
+  title: string;
+  cohort: string;
+  dueDate: string;
+  submissions?: AssignmentSubmission[];
+}
+
+export interface AssignmentSubmission {
+  id: string;
+  assignmentId: string;
+  studentId: string;
+  submitted: boolean;
+}
+
+export interface GradeColumn {
+  id: string;
+  title: string;
+  type: 'Kuis' | 'Ulangan';
+  cohort: string;
+  date: string;
+  scores?: StudentGrade[];
+}
+
+export interface StudentGrade {
+  id: string;
+  gradeColumnId: string;
+  studentId: string;
+  score: number | null;
 }
 
 export interface BehavioralIncidence {
