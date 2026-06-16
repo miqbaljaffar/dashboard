@@ -11,7 +11,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 98,
+    behaviorScore: 100,
     attendanceRate: 0.99,
     violationsCount: 0
   },
@@ -25,7 +25,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-01-10",
     graduationTarget: "2026-08-30",
     status: "Active",
-    behaviorScore: 96,
+    behaviorScore: 100,
     attendanceRate: 0.98,
     violationsCount: 0
   },
@@ -67,7 +67,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 92,
+    behaviorScore: 100,
     attendanceRate: 0.96,
     violationsCount: 0
   },
@@ -81,9 +81,9 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 90,
+    behaviorScore: 100,
     attendanceRate: 1.0,
-    violationsCount: 1
+    violationsCount: 0
   },
   {
     id: "UTB-2026-007",
@@ -109,7 +109,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 95,
+    behaviorScore: 100,
     attendanceRate: 0.97,
     violationsCount: 0
   },
@@ -137,7 +137,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-01-10",
     graduationTarget: "2026-08-30",
     status: "Active",
-    behaviorScore: 90,
+    behaviorScore: 100,
     attendanceRate: 0.94,
     violationsCount: 0
   },
@@ -151,7 +151,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 93,
+    behaviorScore: 100,
     attendanceRate: 0.95,
     violationsCount: 0
   },
@@ -165,7 +165,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 96,
+    behaviorScore: 100,
     attendanceRate: 0.98,
     violationsCount: 0
   },
@@ -179,7 +179,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-01-10",
     graduationTarget: "2026-08-30",
     status: "Active",
-    behaviorScore: 94,
+    behaviorScore: 100,
     attendanceRate: 0.96,
     violationsCount: 0
   },
@@ -193,9 +193,9 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 95,
+    behaviorScore: 100,
     attendanceRate: 1.0,
-    violationsCount: 1
+    violationsCount: 0
   },
   {
     id: "UTB-2026-015",
@@ -207,7 +207,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 95,
+    behaviorScore: 100,
     attendanceRate: 0.97,
     violationsCount: 0
   },
@@ -221,9 +221,9 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-01-10",
     graduationTarget: "2026-08-30",
     status: "Active",
-    behaviorScore: 89,
+    behaviorScore: 100,
     attendanceRate: 0.91,
-    violationsCount: 1
+    violationsCount: 0
   },
   {
     id: "UTB-2026-017",
@@ -235,7 +235,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 91,
+    behaviorScore: 100,
     attendanceRate: 0.93,
     violationsCount: 0
   },
@@ -249,7 +249,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 97,
+    behaviorScore: 100,
     attendanceRate: 0.99,
     violationsCount: 0
   },
@@ -263,7 +263,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-01-10",
     graduationTarget: "2026-08-30",
     status: "Active",
-    behaviorScore: 95,
+    behaviorScore: 100,
     attendanceRate: 0.96,
     violationsCount: 0
   },
@@ -291,7 +291,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 98,
+    behaviorScore: 100,
     attendanceRate: 0.98,
     violationsCount: 0
   },
@@ -305,7 +305,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-01-10",
     graduationTarget: "2026-08-30",
     status: "Active",
-    behaviorScore: 93,
+    behaviorScore: 100,
     attendanceRate: 0.94,
     violationsCount: 0
   },
@@ -319,7 +319,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 90,
+    behaviorScore: 100,
     attendanceRate: 0.91,
     violationsCount: 0
   },
@@ -333,7 +333,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 94,
+    behaviorScore: 100,
     attendanceRate: 0.97,
     violationsCount: 0
   },
@@ -347,7 +347,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-01-10",
     graduationTarget: "2026-08-30",
     status: "Active",
-    behaviorScore: 92,
+    behaviorScore: 100,
     attendanceRate: 0.93,
     violationsCount: 0
   },
@@ -361,7 +361,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 88,
+    behaviorScore: 100,
     attendanceRate: 0.92,
     violationsCount: 0
   },
@@ -375,7 +375,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 99,
+    behaviorScore: 100,
     attendanceRate: 0.99,
     violationsCount: 0
   },
@@ -389,7 +389,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-01-10",
     graduationTarget: "2026-08-30",
     status: "Active",
-    behaviorScore: 91,
+    behaviorScore: 100,
     attendanceRate: 0.95,
     violationsCount: 0
   },
@@ -403,7 +403,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2026-03-01",
     graduationTarget: "2026-10-30",
     status: "Active",
-    behaviorScore: 85,
+    behaviorScore: 100,
     attendanceRate: 0.90,
     violationsCount: 0
   },
@@ -417,7 +417,7 @@ export const initialStudents: Student[] = [
     enrollmentDate: "2025-11-01",
     graduationTarget: "2026-06-30",
     status: "Active",
-    behaviorScore: 96,
+    behaviorScore: 100,
     attendanceRate: 0.98,
     violationsCount: 0
   }
@@ -444,48 +444,6 @@ const generateInitialAttendance = (): AttendanceRecord[] => {
 
 export const initialAttendance: AttendanceRecord[] = generateInitialAttendance();
 
-export const initialIncidences: BehavioralIncidence[] = [
-  {
-    id: "INC-001",
-    studentId: "UTB-2026-006",
-    studentName: "Vasha",
-    date: "2026-06-15",
-    category: "Late Wake Up",
-    severity: "Medium",
-    pointsDeducted: 10,
-    status: "Active",
-    actionTaken: "Verbal warning by Bapak Hartono. Advised to set double alarms."
-  },
-  {
-    id: "INC-002",
-    studentId: "UTB-2026-014",
-    studentName: "Didan",
-    date: "2026-06-14",
-    category: "Room Not Clean",
-    severity: "Low",
-    pointsDeducted: 5,
-    status: "Resolved",
-    actionTaken: "Rearranged personal locker and closet after evening check."
-  }
-];
+export const initialIncidences: BehavioralIncidence[] = [];
 
-export const initialRewards: BehavioralReward[] = [
-  {
-    id: "REW-001",
-    studentId: "UTB-2026-001",
-    studentName: "Nirvana",
-    date: "2026-06-12",
-    category: "Leadership",
-    pointsAdded: 15,
-    description: "Organized voluntary evening vocabulary review sessions in the study lounge for juniors."
-  },
-  {
-    id: "REW-002",
-    studentId: "UTB-2026-007",
-    studentName: "Windi",
-    date: "2026-06-14",
-    category: "Cleanliness",
-    pointsAdded: 10,
-    description: "Ensured Ume Suite Room 201 achieved perfect 100/100 morning hygiene score over a 14-day continuous streak."
-  }
-];
+export const initialRewards: BehavioralReward[] = [];
