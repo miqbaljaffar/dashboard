@@ -1,0 +1,6 @@
+{
+  "name": "Academic & Dormitory Management System",
+  "description": "Comprehensive management system for Japanese Language Training Centers (LPK) to track students, academics, attendance, dormitory operations, disciplines, and exam readiness.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
