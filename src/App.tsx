@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserRole, Student, AttendanceRecord, QuizTest, Assignment, DailyReport, DormRoom, BehavioralIncidence, BehavioralReward } from './types';
 import { initialStudents, initialAttendance, initialQuizzes, initialAssignments, initialDailyReports, initialDormRooms, initialIncidences, initialRewards } from './data/mockData';
 import RoleSwitcher from './components/RoleSwitcher';
@@ -43,16 +43,49 @@ export default function App() {
   const [incidentsState, setIncidentsState] = useState<BehavioralIncidence[]>(initialIncidences);
   const [rewardsState, setRewardsState] = useState<BehavioralReward[]>(initialRewards);
 
+  // Sync data from database backend on load
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const res = await fetch('/api/data');
+        if (!res.ok) throw new Error('API server returned error status');
+        const data = await res.json();
+        setStudentsState(data.students);
+        setAttendanceState(data.attendance);
+        setQuizzesState(data.quizzes);
+        setAssignmentsState(data.assignments);
+        setReportsState(data.dailyReports);
+        setRoomsState(data.dormRooms);
+        setIncidentsState(data.incidents);
+        setRewardsState(data.rewards);
+      } catch (err) {
+        console.warn('Backend server not reachable, using offline mock data:', err);
+      }
+    }
+    loadData();
+  }, []);
+
   // Business handlers
   const handleAddStudent = (newStudent: Student) => {
     setStudentsState(prev => [...prev, newStudent]);
+    fetch('/api/students', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(newStudent),
+    }).catch(err => console.error('Failed to sync student create to DB:', err));
   };
 
   const handleUpdateStudent = (updatedStudent: Student) => {
     setStudentsState(prev => prev.map(s => s.id === updatedStudent.id ? updatedStudent : s));
+    fetch(`/api/students/${updatedStudent.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updatedStudent),
+    }).catch(err => console.error('Failed to sync student update to DB:', err));
   };
 
   const handleUpdateAttendance = (record: AttendanceRecord) => {
+    // Optimistic update of attendance record
     setAttendanceState(prev => {
       const idx = prev.findIndex(a => a.studentId === record.studentId && a.date === record.date);
       if (idx !== -1) {
@@ -63,51 +96,97 @@ export default function App() {
       return [...prev, record];
     });
 
-    // Dynamically adjust student attendance score in the registry
-    setStudentsState(prev => prev.map(s => {
-      if (s.id === record.studentId) {
-        // Recount sessions
-        const studentRecs = [...attendanceState, record].filter(a => a.studentId === s.id);
-        let presentCount = 0;
-        studentRecs.forEach(a => {
-          if (a.morning === 'Present') presentCount++;
-          if (a.classSession === 'Present') presentCount++;
-        });
-        const total = studentRecs.length * 2 || 1;
-        const newRate = presentCount / total;
-        return {
-          ...s,
-          attendanceRate: Number(newRate.toFixed(2))
-        };
-      }
-      return s;
-    }));
+    fetch('/api/attendance', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(record),
+    })
+      .then(res => {
+        if (res.ok) return res.json();
+      })
+      .then(data => {
+        if (data && data.student) {
+          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
+        }
+      })
+      .catch(err => {
+        console.error('Failed to sync attendance update to DB:', err);
+        // Fallback local calculation
+        setStudentsState(prev => prev.map(s => {
+          if (s.id === record.studentId) {
+            const studentRecs = [...attendanceState, record].filter(a => a.studentId === s.id);
+            let presentCount = 0;
+            studentRecs.forEach(a => {
+              if (a.morning === 'Present') presentCount++;
+              if (a.classSession === 'Present') presentCount++;
+            });
+            const total = studentRecs.length * 2 || 1;
+            const newRate = presentCount / total;
+            return {
+              ...s,
+              attendanceRate: Number(newRate.toFixed(2))
+            };
+          }
+          return s;
+        }));
+      });
   };
 
   const handleAddQuiz = (q: QuizTest) => {
     setQuizzesState(prev => [...prev, q]);
+    fetch('/api/quizzes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(q),
+    }).catch(err => console.error('Failed to sync quiz create to DB:', err));
   };
 
   const handleAddAssignment = (a: Assignment) => {
     setAssignmentsState(prev => [...prev, a]);
+    fetch('/api/assignments', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(a),
+    }).catch(err => console.error('Failed to sync assignment create to DB:', err));
   };
 
   const handleSubmitReport = (rep: DailyReport) => {
     setReportsState(prev => [rep, ...prev]);
+    fetch('/api/reports', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rep),
+    }).catch(err => console.error('Failed to sync daily report create to DB:', err));
   };
 
   const handleReviewReport = (reportId: string, status: 'Approved' | 'Flagged', comment: string) => {
     setReportsState(prev => prev.map(r => r.id === reportId ? { ...r, status, teacherComment: comment } : r));
 
-    // If flagged, decrease student behavior points slightly to demonstrate correlation
-    const targetReport = reportsState.find(r => r.id === reportId);
-    if (targetReport && status === 'Flagged') {
-      setStudentsState(prev => prev.map(s => s.id === targetReport.studentId ? {
-        ...s,
-        behaviorScore: Math.max(0, s.behaviorScore - 5),
-        violationsCount: s.violationsCount + 1
-      } : s));
-    }
+    fetch(`/api/reports/${reportId}/review`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status, comment }),
+    })
+      .then(res => {
+        if (res.ok) return res.json();
+      })
+      .then(data => {
+        if (data && data.student) {
+          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
+        }
+      })
+      .catch(err => {
+        console.error('Failed to sync report review to DB:', err);
+        // Fallback local behavior point deduction
+        const targetReport = reportsState.find(r => r.id === reportId);
+        if (targetReport && status === 'Flagged') {
+          setStudentsState(prev => prev.map(s => s.id === targetReport.studentId ? {
+            ...s,
+            behaviorScore: Math.max(0, s.behaviorScore - 5),
+            violationsCount: s.violationsCount + 1
+          } : s));
+        }
+      });
   };
 
   const handleUpdateRoomCleanliness = (
@@ -125,39 +204,84 @@ export default function App() {
       hygieneStatus: hygi,
       laundryStatus: laund
     } : r));
+
+    fetch('/api/rooms', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        building,
+        roomNumber,
+        score,
+        bedArrangement: bedArr,
+        hygieneStatus: hygi,
+        laundryStatus: laund,
+      }),
+    }).catch(err => console.error('Failed to sync room cleanliness to DB:', err));
   };
 
   const handleLogIncident = (inc: BehavioralIncidence) => {
     setIncidentsState(prev => [inc, ...prev]);
 
-    // Apply point deduction onto the student profile behavior Score instantly
-    setStudentsState(prev => prev.map(s => {
-      if (s.id === inc.studentId) {
-        const nextScore = Math.max(0, s.behaviorScore - inc.pointsDeducted);
-        return {
-          ...s,
-          behaviorScore: nextScore,
-          violationsCount: s.violationsCount + 1
-        };
-      }
-      return s;
-    }));
+    fetch('/api/incidents', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(inc),
+    })
+      .then(res => {
+        if (res.ok) return res.json();
+      })
+      .then(data => {
+        if (data && data.student) {
+          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
+        }
+      })
+      .catch(err => {
+        console.error('Failed to sync incident to DB:', err);
+        // Fallback local point deduction
+        setStudentsState(prev => prev.map(s => {
+          if (s.id === inc.studentId) {
+            const nextScore = Math.max(0, s.behaviorScore - inc.pointsDeducted);
+            return {
+              ...s,
+              behaviorScore: nextScore,
+              violationsCount: s.violationsCount + 1
+            };
+          }
+          return s;
+        }));
+      });
   };
 
   const handleLogReward = (rew: BehavioralReward) => {
     setRewardsState(prev => [rew, ...prev]);
 
-    // Apply restorative points onto the student behavior profile instantly
-    setStudentsState(prev => prev.map(s => {
-      if (s.id === rew.studentId) {
-        const nextScore = Math.min(100, s.behaviorScore + rew.pointsAdded);
-        return {
-          ...s,
-          behaviorScore: nextScore
-        };
-      }
-      return s;
-    }));
+    fetch('/api/rewards', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rew),
+    })
+      .then(res => {
+        if (res.ok) return res.json();
+      })
+      .then(data => {
+        if (data && data.student) {
+          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
+        }
+      })
+      .catch(err => {
+        console.error('Failed to sync reward to DB:', err);
+        // Fallback local points restoration
+        setStudentsState(prev => prev.map(s => {
+          if (s.id === rew.studentId) {
+            const nextScore = Math.min(100, s.behaviorScore + rew.pointsAdded);
+            return {
+              ...s,
+              behaviorScore: nextScore
+            };
+          }
+          return s;
+        }));
+      });
   };
 
   // Helper count badges
