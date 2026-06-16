@@ -6,7 +6,13 @@ import {
   initialRewards,
 } from '../src/data/mockData';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL
+    }
+  }
+});
 
 async function main() {
   console.log('Clearing existing database records...');
