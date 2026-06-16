@@ -108,16 +108,69 @@ export default function DashboardView({
   });
   const atRiskCount = atRiskStudents.length;
 
-  // Chart 1: Attendance Trend Over 7 Days (Line Chart)
-  const attendanceTrendData = [
-    { day: 'Mon', attendance: 96, target: 95 },
-    { day: 'Tue', attendance: 94, target: 95 },
-    { day: 'Wed', attendance: 98, target: 95 },
-    { day: 'Thu', attendance: 91, target: 95 },
-    { day: 'Fri', attendance: 95, target: 95 },
-    { day: 'Sat', attendance: 88, target: 95 }, 
-    { day: 'Today', attendance: avgAttendanceRate || 95, target: 95 }
-  ];
+  // Chart 1: Attendance Trend Over Days (Line Chart calculated dynamically)
+  const getAttendanceTrendData = () => {
+    if (!attendance || attendance.length === 0) {
+      return [
+        { day: 'Mon', attendance: 0, target: 95 },
+        { day: 'Tue', attendance: 0, target: 95 },
+        { day: 'Wed', attendance: 0, target: 95 },
+        { day: 'Thu', attendance: 0, target: 95 },
+        { day: 'Fri', attendance: 0, target: 95 },
+        { day: 'Sat', attendance: 0, target: 95 },
+        { day: 'Sun', attendance: 0, target: 95 }
+      ];
+    }
+
+    // Group attendance records by date
+    const attendanceByDate: { [date: string]: { present: number; total: number } } = {};
+    attendance.forEach(record => {
+      const dateStr = record.date;
+      if (!attendanceByDate[dateStr]) {
+        attendanceByDate[dateStr] = { present: 0, total: 0 };
+      }
+      
+      let presentCount = 0;
+      if (record.morning === 'Present') presentCount++;
+      if (record.classSession === 'Present') presentCount++;
+      
+      attendanceByDate[dateStr].present += presentCount;
+      attendanceByDate[dateStr].total += 2;
+    });
+
+    // Sort dates chronologically
+    const sortedDates = Object.keys(attendanceByDate).sort();
+    
+    // Take the last 7 dates for the trend
+    const lastDates = sortedDates.slice(-7);
+
+    return lastDates.map(date => {
+      const data = attendanceByDate[date];
+      const rate = data.total > 0 ? Math.round((data.present / data.total) * 100) : 0;
+      
+      // Try to parse day name or date format
+      let dayLabel = date;
+      try {
+        const parts = date.split('-');
+        if (parts.length === 3) {
+          const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+          if (!isNaN(dateObj.getTime())) {
+            dayLabel = dateObj.toLocaleDateString('id-ID', { weekday: 'short', day: 'numeric', month: 'numeric' });
+          }
+        }
+      } catch (e) {
+        // Fallback to raw date string
+      }
+
+      return {
+        day: dayLabel,
+        attendance: rate,
+        target: 95
+      };
+    });
+  };
+
+  const attendanceTrendData = getAttendanceTrendData();
 
   // Chart 2: Quiz Score Distribution (Histogram style)
   const quizScoreDistData = [
