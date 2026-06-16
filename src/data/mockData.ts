@@ -12,7 +12,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.99,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -26,7 +26,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-08-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.98,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -68,7 +68,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.96,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -110,7 +110,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.97,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -138,7 +138,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-08-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.94,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -152,7 +152,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-10-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.95,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -166,7 +166,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.98,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -180,7 +180,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-08-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.96,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -208,7 +208,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.97,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -222,7 +222,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-08-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.91,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -236,7 +236,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-10-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.93,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -250,7 +250,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.99,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -264,7 +264,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-08-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.96,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -292,7 +292,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.98,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -306,7 +306,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-08-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.94,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -320,7 +320,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-10-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.91,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -334,7 +334,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.97,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -348,7 +348,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-08-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.93,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -362,7 +362,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-10-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.92,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -376,7 +376,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.99,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -390,7 +390,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-08-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.95,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -404,7 +404,7 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-10-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.90,
+    attendanceRate: 1.0,
     violationsCount: 0
   },
   {
@@ -418,31 +418,12 @@ export const initialStudents: Student[] = [
     graduationTarget: "2026-06-30",
     status: "Active",
     behaviorScore: 100,
-    attendanceRate: 0.98,
+    attendanceRate: 1.0,
     violationsCount: 0
   }
 ];
 
-const generateInitialAttendance = (): AttendanceRecord[] => {
-  const dates = ["2026-06-11", "2026-06-12", "2026-06-15", "2026-06-16"];
-  const records: AttendanceRecord[] = [];
-  
-  initialStudents.forEach(student => {
-    dates.forEach(date => {
-      records.push({
-        studentId: student.id,
-        date,
-        morning: 'Present',
-        classSession: 'Present',
-        eveningRollCall: 'Present'
-      });
-    });
-  });
-  
-  return records;
-};
-
-export const initialAttendance: AttendanceRecord[] = generateInitialAttendance();
+export const initialAttendance: AttendanceRecord[] = [];
 
 export const initialIncidences: BehavioralIncidence[] = [];
 
