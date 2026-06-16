@@ -5,9 +5,6 @@ import pkg from 'pg';
 const { Pool } = pkg;
 import {
   initialStudents,
-  initialAttendance,
-  initialIncidences,
-  initialRewards,
 } from '../src/data/mockData';
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -15,87 +12,84 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log('Clearing existing database records...');
-  // Delete in reverse order of dependencies
-  await prisma.attendanceRecord.deleteMany();
-  await prisma.behavioralIncidence.deleteMany();
-  await prisma.behavioralReward.deleteMany();
-  await prisma.student.deleteMany();
+  console.log('🔄 Memulai reset data...');
 
-  console.log('Seeding students...');
+  // 1. Hapus semua data transaksi (urutan penting - dari dependan dulu)
+  console.log('  ↳ Menghapus data nilai (StudentGrade)...');
+  await prisma.studentGrade.deleteMany();
+
+  console.log('  ↳ Menghapus kolom nilai (GradeColumn)...');
+  await prisma.gradeColumn.deleteMany();
+
+  console.log('  ↳ Menghapus submission tugas (AssignmentSubmission)...');
+  await prisma.assignmentSubmission.deleteMany();
+
+  console.log('  ↳ Menghapus tugas (Assignment)...');
+  await prisma.assignment.deleteMany();
+
+  console.log('  ↳ Menghapus catatan presensi (AttendanceRecord)...');
+  await prisma.attendanceRecord.deleteMany();
+
+  console.log('  ↳ Menghapus log pelanggaran (BehavioralIncidence)...');
+  await prisma.behavioralIncidence.deleteMany();
+
+  console.log('  ↳ Menghapus log penghargaan (BehavioralReward)...');
+  await prisma.behavioralReward.deleteMany();
+
+  // 2. Reset skor/statistik semua siswa yang ada ke nilai awal
+  console.log('  ↳ Mereset skor dan statistik siswa ke nilai awal...');
+  await prisma.student.updateMany({
+    data: {
+      behaviorScore: 100,
+      attendanceRate: 1.0,
+      violationsCount: 0,
+      status: 'Active',
+    },
+  });
+
+  // 3. Upsert siswa dari mockData (tambah jika belum ada, update jika sudah ada)
+  console.log('  ↳ Sinkronisasi data siswa dari mockData...');
   for (const student of initialStudents) {
-    await prisma.student.create({
-      data: {
+    await prisma.student.upsert({
+      where: { id: student.id },
+      update: {
+        name: student.name,
+        gender: student.gender,
+        age: student.age,
+        classroom: student.classroom,
+        enrollmentDate: student.enrollmentDate,
+        graduationTarget: student.graduationTarget,
+        status: 'Active',
+        behaviorScore: 100,
+        attendanceRate: 1.0,
+        violationsCount: 0,
+      },
+      create: {
         id: student.id,
         name: student.name,
         gender: student.gender,
         age: student.age,
-        cohort: student.cohort,
         classroom: student.classroom,
         enrollmentDate: student.enrollmentDate,
         graduationTarget: student.graduationTarget,
-        status: student.status,
-        behaviorScore: student.behaviorScore,
-        attendanceRate: student.attendanceRate,
-        violationsCount: student.violationsCount,
+        status: 'Active',
+        behaviorScore: 100,
+        attendanceRate: 1.0,
+        violationsCount: 0,
       },
     });
   }
 
-  console.log('Seeding attendance records...');
-  for (const att of initialAttendance) {
-    await prisma.attendanceRecord.create({
-      data: {
-        studentId: att.studentId,
-        date: att.date,
-        morning: att.morning,
-        classSession: att.classSession,
-        eveningRollCall: att.eveningRollCall,
-        notes: att.notes || null,
-      },
-    });
-  }
-
-  console.log('Seeding behavioral incidences...');
-  for (const inc of initialIncidences) {
-    await prisma.behavioralIncidence.create({
-      data: {
-        id: inc.id,
-        studentId: inc.studentId,
-        studentName: inc.studentName,
-        date: inc.date,
-        category: inc.category,
-        severity: inc.severity,
-        pointsDeducted: inc.pointsDeducted,
-        status: inc.status,
-        actionTaken: inc.actionTaken,
-      },
-    });
-  }
-
-  console.log('Seeding behavioral rewards...');
-  for (const rew of initialRewards) {
-    await prisma.behavioralReward.create({
-      data: {
-        id: rew.id,
-        studentId: rew.studentId,
-        studentName: rew.studentName,
-        date: rew.date,
-        category: rew.category,
-        pointsAdded: rew.pointsAdded,
-        description: rew.description,
-      },
-    });
-  }
-
-  console.log('Seeding completed successfully!');
+  console.log('✅ Reset selesai! Semua data transaksi dihapus, siswa dipertahankan.');
+  console.log(`   Total siswa: ${initialStudents.length} orang`);
 }
 
 main()
   .catch((e) => {
-    console.error('Error during seeding:', e);
+    console.error('❌ Error saat reset:', e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
+    pool.end();
   });

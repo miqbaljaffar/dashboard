@@ -11,7 +11,6 @@ model Student {
   name                String
   gender              String
   age                 Int
-  cohort              String
   classroom           String
   enrollmentDate      String
   graduationTarget    String
@@ -44,7 +43,6 @@ model AttendanceRecord {
 model Assignment {
   id          String   @id @default(uuid())
   title       String
-  cohort      String
   dueDate     String
   
   submissions AssignmentSubmission[]
@@ -66,7 +64,6 @@ model GradeColumn {
   id        String   @id @default(uuid())
   title     String
   type      String   // "Kuis" or "Ulangan"
-  cohort    String
   date      String
   
   scores    StudentGrade[]
