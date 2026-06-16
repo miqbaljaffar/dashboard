@@ -28,3 +28,60 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+@media print {
+  html, body {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Force print background colors for modern browsers */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide interactive controls, scrollbars, etc. */
+  .no-print,
+  #application-sidebar,
+  header,
+  button,
+  select,
+  input,
+  form,
+  .modal-backdrop {
+    display: none !important;
+  }
+
+  /* Page break utilities */
+  .page-break-before {
+    page-break-before: always !important;
+    break-before: page !important;
+  }
+  .page-break-inside-avoid {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+  }
+  
+  tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Simple clean styles for printed tables */
+  th, td {
+    padding: 8px 10px !important;
+    border-bottom: 1px solid #e2e8f0 !important;
+  }
+}
+

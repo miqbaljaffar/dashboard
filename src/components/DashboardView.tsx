@@ -8,7 +8,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
-  TrendingUp
+  TrendingUp,
+  Printer
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -33,6 +34,7 @@ interface DashboardViewProps {
   assignments: Assignment[];
   grades: GradeColumn[];
   onNavigate: (tab: string) => void;
+  onPrintClick?: () => void;
 }
 
 export default function DashboardView({
@@ -41,7 +43,8 @@ export default function DashboardView({
   incidents,
   assignments,
   grades,
-  onNavigate
+  onNavigate,
+  onPrintClick
 }: DashboardViewProps) {
   
   // Real data calculations
@@ -159,9 +162,18 @@ export default function DashboardView({
             Dasbor ringkasan pusat untuk memantau presensi, perilaku, dan nilai akademik siswa UTB Banjar.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600">
-          <Clock className="h-4 w-4 text-slate-400 shrink-0" />
-          <span>Sistem Aktif: Sensei Pengajar</span>
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end shrink-0 select-none">
+          <button
+            onClick={onPrintClick}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-[11px] rounded-lg shadow-sm transition duration-200 cursor-pointer no-print"
+          >
+            <Printer className="h-3.5 w-3.5" />
+            Cetak Report
+          </button>
+          <div className="flex items-center gap-2 text-xs font-mono bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-slate-600">
+            <Clock className="h-4 w-4 text-slate-400 shrink-0" />
+            <span>Sistem Aktif: Sensei Pengajar</span>
+          </div>
         </div>
       </div>
 

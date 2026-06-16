@@ -8,7 +8,8 @@ import {
   Trash2,
   X,
   Check,
-  UserPlus
+  UserPlus,
+  Printer
 } from 'lucide-react';
 
 interface StudentsViewProps {
@@ -16,13 +17,15 @@ interface StudentsViewProps {
   onAddStudent: (student: Student) => void;
   onUpdateStudent: (student: Student) => void;
   onDeleteStudent: (id: string) => void;
+  onPrintClick?: () => void;
 }
 
 export default function StudentsView({
   students,
   onAddStudent,
   onUpdateStudent,
-  onDeleteStudent
+  onDeleteStudent,
+  onPrintClick
 }: StudentsViewProps) {
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,13 +132,22 @@ export default function StudentsView({
           </p>
         </div>
 
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
-        >
-          <UserPlus className="h-4 w-4" />
-          Tambah Siswa Baru
-        </button>
+        <div className="flex items-center gap-2 w-full md:w-auto shrink-0 select-none">
+          <button
+            onClick={onPrintClick}
+            className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer no-print"
+          >
+            <Printer className="h-4 w-4" />
+            Cetak Data Siswa
+          </button>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer"
+          >
+            <UserPlus className="h-4 w-4" />
+            Tambah Siswa Baru
+          </button>
+        </div>
       </div>
 
       {/* Filters Deck */}

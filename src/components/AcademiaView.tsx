@@ -12,7 +12,8 @@ import {
   Search,
   Users,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  Printer
 } from 'lucide-react';
 
 interface AcademiaViewProps {
@@ -27,6 +28,7 @@ interface AcademiaViewProps {
   onUpdateGradeColumn: (id: string, title: string, date: string) => void;
   onDeleteGradeColumn: (id: string) => void;
   onUpdateStudentGrade: (gradeId: string, columnId: string, score: number | null) => void;
+  onPrintClick?: () => void;
 }
 
 export default function AcademiaView({
@@ -40,7 +42,8 @@ export default function AcademiaView({
   onCreateGradeColumn,
   onUpdateGradeColumn,
   onDeleteGradeColumn,
-  onUpdateStudentGrade
+  onUpdateStudentGrade,
+  onPrintClick
 }: AcademiaViewProps) {
   
   const [activeSubTab, setActiveSubTab] = useState<'assignments' | 'grades'>('assignments');
@@ -177,7 +180,14 @@ export default function AcademiaView({
         </div>
 
         {/* Global Filters */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end select-none">
+          <button
+            onClick={onPrintClick}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer no-print"
+          >
+            <Printer className="h-4 w-4" />
+            Cetak Nilai & Tugas
+          </button>
           <span className="text-xs text-slate-400 font-medium hidden sm:inline">Pilih Kelas:</span>
           <select
             className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-blue-500 transition cursor-pointer"

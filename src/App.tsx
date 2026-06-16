@@ -7,10 +7,18 @@ import AttendanceView from './components/AttendanceView';
 import AcademiaView from './components/AcademiaView';
 import DisciplineView from './components/DisciplineView';
 import StudentsView from './components/StudentsView';
-import { GraduationCap } from 'lucide-react';
+import { GraduationCap, Printer } from 'lucide-react';
+import PrintReportModal from './components/PrintReportModal';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+  const [printTabOverride, setPrintTabOverride] = useState<string | undefined>(undefined);
+
+  const handleOpenPrint = (tab?: string) => {
+    setPrintTabOverride(tab);
+    setIsPrintModalOpen(true);
+  };
   
   // Business entities lists states
   const [studentsState, setStudentsState] = useState<Student[]>(initialStudents);
@@ -349,6 +357,7 @@ export default function App() {
             assignments={assignmentsState}
             grades={gradesState}
             onNavigate={(id) => setActiveTab(id)}
+            onPrintClick={() => handleOpenPrint('dashboard')}
           />
         );
       case 'students':
@@ -358,6 +367,7 @@ export default function App() {
             onAddStudent={handleAddStudent}
             onUpdateStudent={handleUpdateStudent}
             onDeleteStudent={handleDeleteStudent}
+            onPrintClick={() => handleOpenPrint('students')}
           />
         );
       case 'attendance':
@@ -366,6 +376,7 @@ export default function App() {
             students={studentsState}
             attendance={attendanceState}
             onUpdateAttendance={handleUpdateAttendance}
+            onPrintClick={() => handleOpenPrint('attendance')}
           />
         );
       case 'academia':
@@ -382,6 +393,7 @@ export default function App() {
             onUpdateGradeColumn={handleUpdateGradeColumn}
             onDeleteGradeColumn={handleDeleteGradeColumn}
             onUpdateStudentGrade={handleUpdateStudentGrade}
+            onPrintClick={() => handleOpenPrint('academia')}
           />
         );
       case 'discipline':
@@ -397,6 +409,7 @@ export default function App() {
             onUpdateReward={handleUpdateReward}
             onDeleteReward={handleDeleteReward}
             role="ADMIN"
+            onPrintClick={() => handleOpenPrint('discipline')}
           />
         );
       default:
@@ -409,63 +422,85 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased">
-      
-      {/* Top Header */}
-      <header className="bg-white text-slate-900 border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 select-none shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="h-9 w-9 bg-slate-100 text-slate-800 rounded flex items-center justify-center font-bold">
-            <GraduationCap className="h-5 w-5 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-sm font-semibold tracking-tight text-slate-900 uppercase">
-              UTB Banjar Nihongo
-            </h1>
-            <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">
-              Japanese Trainee Academic & Performance Management System
-            </p>
-          </div>
-        </div>
-
-        {/* Global info metrics ticker */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 md:gap-5 text-[10.5px] text-slate-500 font-mono">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/60 rounded-md px-2.5 py-1 text-[10px]">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span className="text-slate-700 font-semibold">
-              Sensei Pengajar (Admin/Guru)
-            </span>
-          </div>
-
-          <div className="hidden lg:flex items-center gap-1.5 text-slate-500">
-            <span>Server Sync Secure</span>
-          </div>
-          <span className="hidden lg:inline">•</span>
-          <div className="flex items-center gap-2 text-slate-500">
-            <span>Status Kelas: </span>
-            <span className="bg-red-50 text-red-700 border border-red-100 font-semibold px-2 py-0.5 rounded text-[10px]">
-              {atRiskStudentsCount} At-Risk
-            </span>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Structural container */}
-      <div className="flex-1 flex flex-col md:flex-row min-h-0">
+    <>
+      <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased print:hidden">
         
-        {/* Navigation Sidebar */}
-        <Sidebar
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          totalViolationsCount={activeViolationsCount}
-        />
+        {/* Top Header */}
+        <header className="bg-white text-slate-900 border-b border-slate-200 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 select-none shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="h-9 w-9 bg-slate-100 text-slate-800 rounded flex items-center justify-center font-bold">
+              <GraduationCap className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold tracking-tight text-slate-900 uppercase">
+                UTB Banjar Nihongo
+              </h1>
+              <p className="text-[10px] text-slate-500 font-medium uppercase tracking-wider mt-0.5">
+                Japanese Trainee Academic & Performance Management System
+              </p>
+            </div>
+          </div>
 
-        {/* CONTENT STAGE WORKSPACE */}
-        <main className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#F8FAFC]">
-          {renderTabContent()}
-        </main>
+          {/* Global info metrics ticker */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4 md:gap-5 text-[10.5px] text-slate-500 font-mono">
+            <button
+              onClick={() => handleOpenPrint()}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-[10.5px] rounded-lg shadow-xs transition duration-200 cursor-pointer no-print"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Cetak Laporan
+            </button>
+
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/60 rounded-md px-2.5 py-1 text-[10px]">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span className="text-slate-700 font-semibold">
+                Sensei Pengajar (Admin/Guru)
+              </span>
+            </div>
+
+            <div className="hidden lg:flex items-center gap-1.5 text-slate-500">
+              <span>Server Sync Secure</span>
+            </div>
+            <span className="hidden lg:inline">•</span>
+            <div className="flex items-center gap-2 text-slate-500">
+              <span>Status Kelas: </span>
+              <span className="bg-red-50 text-red-700 border border-red-100 font-semibold px-2 py-0.5 rounded text-[10px]">
+                {atRiskStudentsCount} At-Risk
+              </span>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Structural container */}
+        <div className="flex-1 flex flex-col md:flex-row min-h-0">
+          
+          {/* Navigation Sidebar */}
+          <Sidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            totalViolationsCount={activeViolationsCount}
+          />
+
+          {/* CONTENT STAGE WORKSPACE */}
+          <main className="flex-1 p-6 overflow-y-auto custom-scrollbar bg-[#F8FAFC]">
+            {renderTabContent()}
+          </main>
+
+        </div>
 
       </div>
 
-    </div>
+      <PrintReportModal
+        isOpen={isPrintModalOpen}
+        onClose={() => setIsPrintModalOpen(false)}
+        students={studentsState}
+        attendance={attendanceState}
+        incidents={incidentsState}
+        rewards={rewardsState}
+        assignments={assignmentsState}
+        grades={gradesState}
+        initialTab={printTabOverride || activeTab}
+      />
+    </>
   );
 }

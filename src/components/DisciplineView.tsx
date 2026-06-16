@@ -8,7 +8,8 @@ import {
   Save,
   X,
   Bookmark,
-  Calendar
+  Calendar,
+  Printer
 } from 'lucide-react';
 
 interface DisciplineViewProps {
@@ -22,6 +23,7 @@ interface DisciplineViewProps {
   onUpdateReward: (id: string, data: Partial<BehavioralReward>) => void;
   onDeleteReward: (id: string) => void;
   role: string;
+  onPrintClick?: () => void;
 }
 
 export default function DisciplineView({
@@ -34,7 +36,8 @@ export default function DisciplineView({
   onLogReward,
   onUpdateReward,
   onDeleteReward,
-  role
+  role,
+  onPrintClick
 }: DisciplineViewProps) {
   
   const [activeTab, setActiveTab] = useState<'violations' | 'merits'>('violations');
@@ -175,23 +178,32 @@ export default function DisciplineView({
         </div>
 
         {/* Tab switchers */}
-        <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center gap-2 select-none">
           <button
-            onClick={() => { setActiveTab('violations'); setEditingId(null); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              activeTab === 'violations' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
+            onClick={onPrintClick}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer no-print"
           >
-            Daftar Pelanggaran ({incidents.length})
+            <Printer className="h-4 w-4" />
+            Cetak Catatan Perilaku
           </button>
-          <button
-            onClick={() => { setActiveTab('merits'); setEditingId(null); }}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
-              activeTab === 'merits' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-            }`}
-          >
-            Daftar Penghargaan ({rewards.length})
-          </button>
+          <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200">
+            <button
+              onClick={() => { setActiveTab('violations'); setEditingId(null); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                activeTab === 'violations' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Daftar Pelanggaran ({incidents.length})
+            </button>
+            <button
+              onClick={() => { setActiveTab('merits'); setEditingId(null); }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+                activeTab === 'merits' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              Daftar Penghargaan ({rewards.length})
+            </button>
+          </div>
         </div>
       </div>
 

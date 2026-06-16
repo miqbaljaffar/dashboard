@@ -11,19 +11,22 @@ import {
   Sparkles,
   HelpCircle,
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  Printer
 } from 'lucide-react';
 
 interface AttendanceViewProps {
   students: Student[];
   attendance: AttendanceRecord[];
   onUpdateAttendance: (record: AttendanceRecord) => void;
+  onPrintClick?: () => void;
 }
 
 export default function AttendanceView({
   students,
   attendance,
-  onUpdateAttendance
+  onUpdateAttendance,
+  onPrintClick
 }: AttendanceViewProps) {
   
   const [selectedDate, setSelectedDate] = useState('2026-06-16');
@@ -136,7 +139,14 @@ export default function AttendanceView({
         </div>
 
         {/* Date / Cohort select controls */}
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center select-none">
+          <button
+            onClick={onPrintClick}
+            className="px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white font-bold text-xs rounded-lg shadow-sm transition flex items-center gap-1.5 cursor-pointer no-print"
+          >
+            <Printer className="h-4 w-4" />
+            Cetak Rekap Presensi
+          </button>
           <input
             type="date"
             className="bg-white border border-slate-200 rounded p-1.5 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-blue-500"
