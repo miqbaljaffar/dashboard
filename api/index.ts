@@ -18,20 +18,16 @@ app.get('/api/data', async (req, res) => {
   try {
     const students = await prisma.student.findMany({ orderBy: { id: 'asc' } });
     const attendance = await prisma.attendanceRecord.findMany();
-    const quizzes = await prisma.quizTest.findMany({ orderBy: { date: 'desc' } });
-    const assignments = await prisma.assignment.findMany({ orderBy: { deadline: 'desc' } });
-    const dailyReports = await prisma.dailyReport.findMany({ orderBy: { date: 'desc' } });
-    const dormRooms = await prisma.dormRoom.findMany({ orderBy: { roomNumber: 'asc' } });
     const incidents = await prisma.behavioralIncidence.findMany({ orderBy: { date: 'desc' } });
     const rewards = await prisma.behavioralReward.findMany({ orderBy: { date: 'desc' } });
 
     res.json({
       students,
       attendance,
-      quizzes,
-      assignments,
-      dailyReports,
-      dormRooms,
+      quizzes: [],      // Return empty arrays for backwards compatibility / smooth transitions
+      assignments: [],
+      dailyReports: [],
+      dormRooms: [],
       incidents,
       rewards,
     });
@@ -98,108 +94,6 @@ app.post('/api/attendance', async (req, res) => {
     res.json({ record, student: updatedStudent });
   } catch (error) {
     console.error('Error updating attendance:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-// Quizzes API
-app.post('/api/quizzes', async (req, res) => {
-  try {
-    const quiz = await prisma.quizTest.create({
-      data: {
-        id: req.body.id,
-        title: req.body.title,
-        type: req.body.type,
-        date: req.body.date,
-        cohort: req.body.cohort,
-        averageScore: req.body.averageScore,
-        highestScore: req.body.highestScore,
-        lowestScore: req.body.lowestScore,
-        passRate: req.body.passRate,
-        questionAnalysis: req.body.questionAnalysis,
-        weakTopics: req.body.weakTopics,
-        strongTopics: req.body.strongTopics,
-      },
-    });
-    res.status(201).json(quiz);
-  } catch (error) {
-    console.error('Error creating quiz:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-// Assignments API
-app.post('/api/assignments', async (req, res) => {
-  try {
-    const assignment = await prisma.assignment.create({
-      data: req.body,
-    });
-    res.status(201).json(assignment);
-  } catch (error) {
-    console.error('Error creating assignment:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-// Daily Reports API
-app.post('/api/reports', async (req, res) => {
-  try {
-    const report = await prisma.dailyReport.create({
-      data: req.body,
-    });
-    res.status(201).json(report);
-  } catch (error) {
-    console.error('Error creating daily report:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-app.put('/api/reports/:id/review', async (req, res) => {
-  const { id } = req.params;
-  const { status, comment } = req.body;
-  try {
-    const report = await prisma.dailyReport.update({
-      where: { id },
-      data: { status, teacherComment: comment },
-    });
-
-    let updatedStudent = null;
-    if (status === 'Flagged') {
-      const student = await prisma.student.findUnique({ where: { id: report.studentId } });
-      if (student) {
-        updatedStudent = await prisma.student.update({
-          where: { id: report.studentId },
-          data: {
-            behaviorScore: Math.max(0, student.behaviorScore - 5),
-            violationsCount: student.violationsCount + 1,
-          },
-        });
-      }
-    }
-
-    res.json({ report, student: updatedStudent });
-  } catch (error) {
-    console.error('Error reviewing daily report:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-// Dormitory API
-app.put('/api/rooms', async (req, res) => {
-  const { building, roomNumber, score, bedArrangement, hygieneStatus, laundryStatus } = req.body;
-  try {
-    const room = await prisma.dormRoom.update({
-      where: { building_roomNumber: { building, roomNumber } },
-      data: {
-        cleanlinessScore: score,
-        bedArrangement,
-        hygieneStatus,
-        laundryStatus,
-      },
-    });
-    res.json(room);
-  } catch (error) {
-    console.error('Error updating room cleanliness:', error);
     res.status(500).json({ error: (error as Error).message });
   }
 });

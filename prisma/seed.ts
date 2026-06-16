@@ -2,10 +2,6 @@ import { PrismaClient } from '@prisma/client';
 import {
   initialStudents,
   initialAttendance,
-  initialQuizzes,
-  initialAssignments,
-  initialDailyReports,
-  initialDormRooms,
   initialIncidences,
   initialRewards,
 } from '../src/data/mockData';
@@ -16,20 +12,9 @@ async function main() {
   console.log('Clearing existing database records...');
   // Delete in reverse order of dependencies
   await prisma.attendanceRecord.deleteMany();
-  await prisma.dailyReport.deleteMany();
   await prisma.behavioralIncidence.deleteMany();
   await prisma.behavioralReward.deleteMany();
   await prisma.student.deleteMany();
-  await prisma.quizTest.deleteMany();
-  await prisma.assignment.deleteMany();
-  await prisma.dormRoom.deleteMany();
-
-  console.log('Seeding dorm rooms...');
-  for (const room of initialDormRooms) {
-    await prisma.dormRoom.create({
-      data: room,
-    });
-  }
 
   console.log('Seeding students...');
   for (const student of initialStudents) {
@@ -43,24 +28,13 @@ async function main() {
         classroom: student.classroom,
         enrollmentDate: student.enrollmentDate,
         graduationTarget: student.graduationTarget,
-        jlptTarget: student.jlptTarget,
-        currentJlptLevel: student.currentJlptLevel,
-        jftTarget: student.jftTarget,
-        sswField: student.sswField,
-        interviewReadiness: student.interviewReadiness,
-        emergencyContactName: student.emergencyContactName,
-        emergencyContactPhone: student.emergencyContactPhone,
-        relationship: student.relationship,
-        dormBuilding: student.dormBuilding,
-        dormRoom: student.dormRoom,
-        dormBed: student.dormBed,
         status: student.status,
         behaviorScore: student.behaviorScore,
         attendanceRate: student.attendanceRate,
-        quizAverage: student.quizAverage,
-        missingAssignmentsCount: student.missingAssignmentsCount,
         violationsCount: student.violationsCount,
-        progressTrend: student.progressTrend,
+        assignmentSubmitted: student.assignmentSubmitted,
+        quizScore: student.quizScore,
+        examScore: student.examScore,
       },
     });
   }
@@ -75,54 +49,6 @@ async function main() {
         classSession: att.classSession,
         eveningRollCall: att.eveningRollCall,
         notes: att.notes || null,
-      },
-    });
-  }
-
-  console.log('Seeding quizzes...');
-  for (const quiz of initialQuizzes) {
-    await prisma.quizTest.create({
-      data: {
-        id: quiz.id,
-        title: quiz.title,
-        type: quiz.type,
-        date: quiz.date,
-        cohort: quiz.cohort,
-        averageScore: quiz.averageScore,
-        highestScore: quiz.highestScore,
-        lowestScore: quiz.lowestScore,
-        passRate: quiz.passRate,
-        questionAnalysis: quiz.questionAnalysis as any,
-        weakTopics: quiz.weakTopics,
-        strongTopics: quiz.strongTopics,
-      },
-    });
-  }
-
-  console.log('Seeding assignments...');
-  for (const assign of initialAssignments) {
-    await prisma.assignment.create({
-      data: assign,
-    });
-  }
-
-  console.log('Seeding daily reports...');
-  for (const report of initialDailyReports) {
-    await prisma.dailyReport.create({
-      data: {
-        id: report.id,
-        studentId: report.studentId,
-        studentName: report.studentName,
-        date: report.date,
-        learnedToday: report.learnedToday,
-        difficultMaterial: report.difficultMaterial,
-        studyDurationHours: report.studyDurationHours,
-        selfEvaluation: report.selfEvaluation,
-        mood: report.mood,
-        tomorrowTarget: report.tomorrowTarget,
-        status: report.status,
-        teacherComment: report.teacherComment || null,
-        flaggedReason: report.flaggedReason || null,
       },
     });
   }

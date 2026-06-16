@@ -1,6 +1,5 @@
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 generator client {
@@ -8,35 +7,23 @@ generator client {
 }
 
 model Student {
-  id                      String   @id
-  name                    String
-  gender                  String
-  age                     Int
-  cohort                  String
-  classroom               String
-  enrollmentDate          String
-  graduationTarget        String
-  jlptTarget              String
-  currentJlptLevel        String
-  jftTarget               String
-  sswField                String
-  interviewReadiness      String
-  emergencyContactName    String
-  emergencyContactPhone   String
-  relationship            String
-  dormBuilding            String
-  dormRoom                String
-  dormBed                 Int
-  status                  String
-  behaviorScore           Int
-  attendanceRate          Float
-  quizAverage             Float
-  missingAssignmentsCount Int
-  violationsCount         Int
-  progressTrend           String
+  id                  String   @id
+  name                String
+  gender              String
+  age                 Int
+  cohort              String
+  classroom           String
+  enrollmentDate      String
+  graduationTarget    String
+  status              String
+  behaviorScore       Int
+  attendanceRate      Float
+  violationsCount     Int
+  assignmentSubmitted Boolean  @default(false)
+  quizScore           Int?
+  examScore           Int?
 
   attendance   AttendanceRecord[]
-  dailyReports DailyReport[]
   incidents    BehavioralIncidence[]
   rewards      BehavioralReward[]
 }
@@ -53,63 +40,6 @@ model AttendanceRecord {
   student         Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@unique([studentId, date])
-}
-
-model QuizTest {
-  id               String   @id
-  title            String
-  type             String
-  date             String
-  cohort           String
-  averageScore     Float
-  highestScore     Float
-  lowestScore      Float
-  passRate         Float
-  questionAnalysis Json     // Store array of objects as JSON
-  weakTopics       String[]
-  strongTopics     String[]
-}
-
-model Assignment {
-  id             String   @id
-  title          String
-  type           String
-  deadline       String
-  cohort         String
-  totalStudents  Int
-  submittedCount Int
-  lateCount      Int
-}
-
-model DailyReport {
-  id                 String   @id
-  studentId          String
-  studentName        String
-  date               String
-  learnedToday       String
-  difficultMaterial  String
-  studyDurationHours Float
-  selfEvaluation     Int
-  mood               String
-  tomorrowTarget     String
-  status             String
-  teacherComment     String?
-  flaggedReason      String?
-
-  student            Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-}
-
-model DormRoom {
-  building         String
-  roomNumber       String
-  capacity         Int
-  occupied         Int
-  cleanlinessScore Int
-  bedArrangement   String
-  hygieneStatus    String
-  laundryStatus    String
-
-  @@id([building, roomNumber])
 }
 
 model BehavioralIncidence {
@@ -137,3 +67,4 @@ model BehavioralReward {
 
   student        Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
 }
+
