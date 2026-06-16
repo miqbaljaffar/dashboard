@@ -127,11 +127,11 @@ export default function App() {
   };
 
   // Dynamic Assignments CRUD handlers
-  const handleCreateAssignment = (title: string, cohort: string, dueDate: string) => {
+  const handleCreateAssignment = (title: string, dueDate: string) => {
     fetch('/api/assignments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, cohort, dueDate })
+      body: JSON.stringify({ title, dueDate })
     })
       .then(res => res.json())
       .then(newAss => {
@@ -183,11 +183,11 @@ export default function App() {
   };
 
   // Dynamic Grade Columns CRUD handlers
-  const handleCreateGradeColumn = (title: string, type: 'Kuis' | 'Ulangan', cohort: string, date: string) => {
+  const handleCreateGradeColumn = (title: string, type: 'Kuis' | 'Ulangan', date: string) => {
     fetch('/api/grades', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, type, cohort, date })
+      body: JSON.stringify({ title, type, date })
     })
       .then(res => res.json())
       .then(newCol => {

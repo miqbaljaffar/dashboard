@@ -36,7 +36,6 @@ export default function PrintReportModal({
   initialTab = 'dashboard'
 }: PrintReportModalProps) {
   const [reportType, setReportType] = useState<string>(initialTab);
-  const [selectedCohort, setSelectedCohort] = useState<string>('All');
   const [customTitle, setCustomTitle] = useState<string>('');
   const [customSubtitle, setCustomSubtitle] = useState<string>('');
   const [includeSignature, setIncludeSignature] = useState<boolean>(true);
@@ -74,8 +73,8 @@ export default function PrintReportModal({
 
   if (!isOpen) return null;
 
-  // Cohort filters
-  const filteredStudents = students.filter(s => selectedCohort === 'All' || s.cohort === selectedCohort);
+  // All students (single class - no cohort filter)
+  const filteredStudents = students;
   const studentIds = filteredStudents.map(s => s.id);
 
   // Theme helper classes
@@ -103,7 +102,7 @@ export default function PrintReportModal({
     ? Math.round((activeStudents.reduce((acc, s) => acc + s.attendanceRate, 0) / activeStudents.length) * 100)
     : 0;
 
-  const quizColumns = grades.filter(g => g.type === 'Kuis' && (selectedCohort === 'All' || g.cohort === selectedCohort));
+  const quizColumns = grades.filter(g => g.type === 'Kuis');
   let totalQuizScore = 0;
   let totalQuizCount = 0;
   quizColumns.forEach(g => {
@@ -170,7 +169,7 @@ export default function PrintReportModal({
               <tr key={st.id} className="border-b border-slate-100">
                 <td className="py-2 px-3 font-semibold text-slate-800">{st.name}</td>
                 <td className="py-2 px-3 font-mono">{st.id}</td>
-                <td className="py-2 px-3">{st.cohort} - {st.classroom}</td>
+                <td className="py-2 px-3">{st.classroom}</td>
                 <td className="py-2 px-3 text-center font-bold text-green-700">{st.behaviorScore} Pts</td>
                 <td className="py-2 px-3 text-center font-mono font-semibold">{Math.round(st.attendanceRate * 100)}%</td>
               </tr>
@@ -225,7 +224,7 @@ export default function PrintReportModal({
             <th className="py-2 px-3">Nama Lengkap</th>
             <th className="py-2 px-3 w-16 text-center">Gender</th>
             <th className="py-2 px-3 w-12 text-center">Umur</th>
-            <th className="py-2 px-3">Cohort / Kelas</th>
+            <th className="py-2 px-3">Kelas</th>
             <th className="py-2 px-3 text-center">Poin Perilaku</th>
             <th className="py-2 px-3 text-center">Presensi</th>
             <th className="py-2 px-3 text-center w-20">Status</th>
@@ -239,7 +238,7 @@ export default function PrintReportModal({
               <td className="py-2 px-3 font-bold text-slate-850">{st.name}</td>
               <td className="py-2 px-3 text-center">{st.gender === 'Male' ? 'L' : 'P'}</td>
               <td className="py-2 px-3 text-center font-mono">{st.age} th</td>
-              <td className="py-2 px-3">{st.cohort} ({st.classroom})</td>
+              <td className="py-2 px-3">{st.classroom}</td>
               <td className="py-2 px-3 text-center font-bold">
                 <span className={st.behaviorScore >= 85 ? 'text-green-700' : st.behaviorScore >= 70 ? 'text-amber-700' : 'text-red-700'}>
                   {st.behaviorScore} Pts
@@ -264,8 +263,8 @@ export default function PrintReportModal({
   );
 
   const renderAttendanceReport = () => {
-    // Filter active cohort students
-    const activeCohortStudents = students.filter(s => s.status === 'Active' && (selectedCohort === 'All' || s.cohort === selectedCohort));
+    // Filter active students
+    const activeCohortStudents = students.filter(s => s.status === 'Active');
     
     // Find attendance records for selected date
     const getStatus = (studentId: string, session: 'morning' | 'classSession') => {
@@ -280,9 +279,6 @@ export default function PrintReportModal({
           <div>
             <span>Tanggal Cetak Laporan Kehadiran: <strong>{selectedDate}</strong></span>
           </div>
-          <div>
-            <span>Cohort Terpilih: <strong>{selectedCohort}</strong></span>
-          </div>
         </div>
 
         {/* Attendance Table */}
@@ -292,7 +288,7 @@ export default function PrintReportModal({
               <th className="py-2.5 px-2 w-8 text-center">No</th>
               <th className="py-2.5 px-3">Nama Siswa</th>
               <th className="py-2.5 px-3">ID Siswa</th>
-              <th className="py-2.5 px-3">Cohort / Kelas</th>
+              <th className="py-2.5 px-3">Kelas</th>
               <th className="py-2.5 px-3 text-center">Sesi Pagi (08:30)</th>
               <th className="py-2.5 px-3 text-center">Sesi Siang (13:00)</th>
             </tr>
@@ -318,7 +314,7 @@ export default function PrintReportModal({
                   <td className="py-2.5 px-2 text-center font-mono text-slate-400">{i + 1}</td>
                   <td className="py-2.5 px-3 font-bold text-slate-800">{st.name}</td>
                   <td className="py-2.5 px-3 font-mono text-slate-500">{st.id}</td>
-                  <td className="py-2.5 px-3">{st.cohort} ({st.classroom})</td>
+                  <td className="py-2.5 px-3">{st.classroom}</td>
                   <td className="py-2.5 px-3 text-center">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${getStatusBadge(morn)}`}>
                       {morn}
@@ -339,9 +335,9 @@ export default function PrintReportModal({
   };
 
   const renderAcademiaReport = () => {
-    const activeCohortStudents = students.filter(s => s.status === 'Active' && (selectedCohort === 'All' || s.cohort === selectedCohort));
-    const activeCohortAssignments = assignments.filter(a => selectedCohort === 'All' || a.cohort === selectedCohort);
-    const activeCohortGrades = grades.filter(g => selectedCohort === 'All' || g.cohort === selectedCohort);
+    const activeCohortStudents = students.filter(s => s.status === 'Active');
+    const activeCohortAssignments = assignments;
+    const activeCohortGrades = grades;
 
     return (
       <div className="space-y-6">
@@ -584,21 +580,6 @@ export default function PrintReportModal({
                 </div>
               </div>
 
-              {/* Filter Class */}
-              <div className="space-y-1.5">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Filter Cohort/Kelas</label>
-                <select
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-blue-500 transition cursor-pointer"
-                  value={selectedCohort}
-                  onChange={(e) => setSelectedCohort(e.target.value)}
-                >
-                  <option value="All">Semua Cohort</option>
-                  <option value="Cohort 23">Cohort 23</option>
-                  <option value="Cohort 24">Cohort 24</option>
-                  <option value="Cohort 25">Cohort 25</option>
-                </select>
-              </div>
-
               {/* Date Selector for Attendance */}
               {reportType === 'attendance' && (
                 <div className="space-y-1.5">
@@ -696,7 +677,7 @@ export default function PrintReportModal({
                       <span className="text-[10px] font-mono text-slate-500 block">Tanggal Cetak: 16-06-2026</span>
                       <span className="text-[10px] font-mono text-slate-500 block mt-0.5">Oleh: Sensei Pengajar</span>
                       <span className={`inline-block mt-2 text-[9px] font-bold px-2 py-0.5 rounded border ${theme.accent}`}>
-                        Kelas: {selectedCohort === 'All' ? 'Semua Cohort' : selectedCohort}
+                        Fuji Elite Class
                       </span>
                     </div>
                   </div>
@@ -778,7 +759,7 @@ export default function PrintReportModal({
             <span className="text-[9px] font-mono text-slate-600 block">Tanggal: 16-06-2026</span>
             <span className="text-[9px] font-mono text-slate-600 block">Oleh: Sensei Pengajar</span>
             <span className={`inline-block mt-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300`}>
-              Kelas: {selectedCohort === 'All' ? 'Semua Cohort' : selectedCohort}
+              Fuji Elite Class
             </span>
           </div>
         </div>

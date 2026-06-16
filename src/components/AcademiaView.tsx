@@ -20,11 +20,11 @@ interface AcademiaViewProps {
   students: Student[];
   assignments: Assignment[];
   grades: GradeColumn[];
-  onCreateAssignment: (title: string, cohort: string, dueDate: string) => void;
+  onCreateAssignment: (title: string, dueDate: string) => void;
   onUpdateAssignment: (id: string, title: string, dueDate: string) => void;
   onDeleteAssignment: (id: string) => void;
   onToggleSubmission: (submissionId: string, assignmentId: string, submitted: boolean) => void;
-  onCreateGradeColumn: (title: string, type: 'Kuis' | 'Ulangan', cohort: string, date: string) => void;
+  onCreateGradeColumn: (title: string, type: 'Kuis' | 'Ulangan', date: string) => void;
   onUpdateGradeColumn: (id: string, title: string, date: string) => void;
   onDeleteGradeColumn: (id: string) => void;
   onUpdateStudentGrade: (gradeId: string, columnId: string, score: number | null) => void;
@@ -47,7 +47,6 @@ export default function AcademiaView({
 }: AcademiaViewProps) {
   
   const [activeSubTab, setActiveSubTab] = useState<'assignments' | 'grades'>('assignments');
-  const [selectedCohort, setSelectedCohort] = useState('Cohort 24');
   const [searchQuery, setSearchQuery] = useState('');
 
   // Selected item states
@@ -66,10 +65,6 @@ export default function AcademiaView({
 
   // Local inputs state for student scores (for smooth typing)
   const [localScores, setLocalScores] = useState<{ [gradeId: string]: string }>({});
-
-  // Filter lists based on cohort
-  const cohortAssignments = assignments.filter(a => a.cohort === selectedCohort);
-  const cohortGrades = grades.filter(g => g.cohort === selectedCohort);
 
   // Selected details
   const activeAssignment = assignments.find(a => a.id === selectedAssignmentId);
@@ -90,14 +85,14 @@ export default function AcademiaView({
   const handleCreateAssignmentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    onCreateAssignment(newTitle, selectedCohort, newDate);
+    onCreateAssignment(newTitle, newDate);
     setNewTitle('');
   };
 
   const handleCreateGradeColSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTitle.trim()) return;
-    onCreateGradeColumn(newTitle, newGradeType, selectedCohort, newDate);
+    onCreateGradeColumn(newTitle, newGradeType, newDate);
     setNewTitle('');
   };
 
@@ -144,12 +139,12 @@ export default function AcademiaView({
     }
   };
 
-  // Reset selected when cohort or tab changes
+  // Reset selected when tab changes
   useEffect(() => {
     setSelectedAssignmentId(null);
     setSelectedGradeColId(null);
     setEditingItemId(null);
-  }, [selectedCohort, activeSubTab]);
+  }, [activeSubTab]);
 
   return (
     <div className="space-y-6">
@@ -188,16 +183,6 @@ export default function AcademiaView({
             <Printer className="h-4 w-4" />
             Cetak Nilai & Tugas
           </button>
-          <span className="text-xs text-slate-400 font-medium hidden sm:inline">Pilih Kelas:</span>
-          <select
-            className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-blue-500 transition cursor-pointer"
-            value={selectedCohort}
-            onChange={(e) => setSelectedCohort(e.target.value)}
-          >
-            <option value="Cohort 23">Cohort 23</option>
-            <option value="Cohort 24">Cohort 24</option>
-            <option value="Cohort 25">Cohort 25</option>
-          </select>
         </div>
       </div>
 
@@ -274,10 +259,10 @@ export default function AcademiaView({
 
             <div className="space-y-2 max-h-[300px] overflow-y-auto custom-scrollbar">
               {activeSubTab === 'assignments' ? (
-                cohortAssignments.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-6">Belum ada tugas untuk kelas ini.</p>
+                assignments.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-6">Belum ada tugas yang dibuat.</p>
                 ) : (
-                  cohortAssignments.map(a => {
+                  assignments.map(a => {
                     const isSelected = selectedAssignmentId === a.id;
                     const isEditing = editingItemId === a.id;
                     
@@ -355,10 +340,10 @@ export default function AcademiaView({
                   })
                 )
               ) : (
-                cohortGrades.length === 0 ? (
-                  <p className="text-xs text-slate-400 text-center py-6">Belum ada kuis/ulangan untuk kelas ini.</p>
+                grades.length === 0 ? (
+                  <p className="text-xs text-slate-400 text-center py-6">Belum ada kuis/ulangan yang dibuat.</p>
                 ) : (
-                  cohortGrades.map(g => {
+                  grades.map(g => {
                     const isSelected = selectedGradeColId === g.id;
                     const isEditing = editingItemId === g.id;
                     
@@ -466,7 +451,7 @@ export default function AcademiaView({
                 <div className="border-b border-slate-150 pb-3 flex justify-between items-center shrink-0">
                   <div>
                     <h3 className="font-bold text-slate-900 text-sm">{activeAssignment.title}</h3>
-                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Kelas: {selectedCohort} • Batas: {activeAssignment.dueDate}</p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Fuji Elite Class • Batas: {activeAssignment.dueDate}</p>
                   </div>
                   <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
                     Tugas Aktif
@@ -537,7 +522,7 @@ export default function AcademiaView({
                     <h3 className="font-bold text-slate-900 text-sm">
                       [{activeGradeCol.type}] {activeGradeCol.title}
                     </h3>
-                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Kelas: {selectedCohort} • Tanggal: {activeGradeCol.date}</p>
+                    <p className="text-[10px] text-slate-500 font-mono mt-0.5">Fuji Elite Class • Tanggal: {activeGradeCol.date}</p>
                   </div>
                   <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
                     activeGradeCol.type === 'Kuis' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-violet-50 text-violet-700 border-violet-100'

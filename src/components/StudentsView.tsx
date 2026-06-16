@@ -29,7 +29,6 @@ export default function StudentsView({
 }: StudentsViewProps) {
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCohort, setSelectedCohort] = useState('All');
   
   // Modal state for adding student
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -37,28 +36,21 @@ export default function StudentsView({
   const [newName, setNewName] = useState('');
   const [newGender, setNewGender] = useState<'Male' | 'Female'>('Male');
   const [newAge, setNewAge] = useState(20);
-  const [newCohort, setNewCohort] = useState('Cohort 24');
-  const [newClassroom, setNewClassroom] = useState('Sakura Class');
+  const [newClassroom, setNewClassroom] = useState('Fuji Elite Class');
   const [newEnrollDate, setNewEnrollDate] = useState(new Date().toISOString().split('T')[0]);
-  const [newGradTarget, setNewGradTarget] = useState('2026-08-30');
+  const [newGradTarget, setNewGradTarget] = useState('2026-06-30');
 
   // Inline editing states
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
-  const [editCohort, setEditCohort] = useState('');
   const [editClassroom, setEditClassroom] = useState('');
   const [editStatus, setEditStatus] = useState<Student['status']>('Active');
 
   // Filter students
   const filteredStudents = students.filter(s => {
-    const matchesSearch = s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          s.id.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCohort = selectedCohort === 'All' || s.cohort === selectedCohort;
-    return matchesSearch && matchesCohort;
+    return s.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+           s.id.toLowerCase().includes(searchQuery.toLowerCase());
   });
-
-  // Unique cohorts list for filter dropdown
-  const cohorts = ['All', ...Array.from(new Set(students.map(s => s.cohort)))];
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -75,7 +67,6 @@ export default function StudentsView({
       name: newName.trim(),
       gender: newGender,
       age: Number(newAge),
-      cohort: newCohort,
       classroom: newClassroom,
       enrollmentDate: newEnrollDate,
       graduationTarget: newGradTarget,
@@ -100,7 +91,6 @@ export default function StudentsView({
     const updated: Student = {
       ...student,
       name: editName.trim(),
-      cohort: editCohort,
       classroom: editClassroom,
       status: editStatus
     };
@@ -112,7 +102,6 @@ export default function StudentsView({
   const startEditing = (s: Student) => {
     setEditingStudentId(s.id);
     setEditName(s.name);
-    setEditCohort(s.cohort);
     setEditClassroom(s.classroom);
     setEditStatus(s.status);
   };
@@ -167,20 +156,6 @@ export default function StudentsView({
           />
         </div>
 
-        {/* Cohort Selector */}
-        <div className="flex items-center gap-2 w-full sm:w-auto shrink-0 justify-end">
-          <span className="text-xs text-slate-400 font-semibold select-none">Filter Kelas:</span>
-          <select
-            className="bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700 focus:outline-hidden focus:border-blue-500 transition cursor-pointer"
-            value={selectedCohort}
-            onChange={(e) => setSelectedCohort(e.target.value)}
-          >
-            {cohorts.map(c => (
-              <option key={c} value={c}>{c}</option>
-            ))}
-          </select>
-        </div>
-
       </div>
 
       {/* Students Table */}
@@ -202,7 +177,7 @@ export default function StudentsView({
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[9px] bg-slate-50/50 select-none">
                   <th className="py-3 px-4">Informasi Siswa</th>
-                  <th className="py-3 px-4">Kelas & Cohort</th>
+                  <th className="py-3 px-4">Kelas</th>
                   <th className="py-3 px-4">Poin Perilaku</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-center w-28">Aksi</th>
@@ -239,19 +214,10 @@ export default function StudentsView({
                         </div>
                       </td>
 
-                      {/* Cohort & Classroom */}
+                      {/* Classroom */}
                       <td className="py-3 px-4">
                         {isEditing ? (
                           <div className="flex flex-col gap-1.5 max-w-[150px]">
-                            <select
-                              className="border border-slate-200 rounded p-1 text-[11px] font-semibold"
-                              value={editCohort}
-                              onChange={(e) => setEditCohort(e.target.value)}
-                            >
-                              <option value="Cohort 23">Cohort 23</option>
-                              <option value="Cohort 24">Cohort 24</option>
-                              <option value="Cohort 25">Cohort 25</option>
-                            </select>
                             <input
                               type="text"
                               className="border border-slate-200 rounded px-1 py-0.5 text-[11px] focus:outline-hidden"
@@ -261,8 +227,7 @@ export default function StudentsView({
                           </div>
                         ) : (
                           <div>
-                            <p className="font-semibold text-slate-800">{st.cohort}</p>
-                            <p className="text-[10px] text-slate-500 font-medium">{st.classroom}</p>
+                            <p className="font-semibold text-slate-800">{st.classroom}</p>
                           </div>
                         )}
                       </td>
@@ -404,7 +369,7 @@ export default function StudentsView({
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Gender</label>
                   <select
@@ -427,18 +392,6 @@ export default function StudentsView({
                     value={newAge}
                     onChange={(e) => setNewAge(Number(e.target.value))}
                   />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Kelas</label>
-                  <select
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold cursor-pointer"
-                    value={newCohort}
-                    onChange={(e) => setNewCohort(e.target.value)}
-                  >
-                    <option value="Cohort 23">Cohort 23</option>
-                    <option value="Cohort 24">Cohort 24</option>
-                    <option value="Cohort 25">Cohort 25</option>
-                  </select>
                 </div>
               </div>
 

@@ -30,13 +30,12 @@ export default function AttendanceView({
 }: AttendanceViewProps) {
   
   const [selectedDate, setSelectedDate] = useState('2026-06-16');
-  const [selectedCohort, setSelectedCohort] = useState('Cohort 24');
 
-  // Filter students to track for selected cohort
-  const cohortStudents = students.filter(s => s.status === 'Active' && s.cohort === selectedCohort);
+  // All active students (single class)
+  const activeStudents = students.filter(s => s.status === 'Active');
 
   // Stats
-  const totalInCohort = cohortStudents.length;
+  const totalActive = activeStudents.length;
 
   const getStatusForStudent = (studentId: string, session: 'morning' | 'classSession' | 'eveningRollCall') => {
     const record = attendance.find(a => a.studentId === studentId && a.date === selectedDate);
@@ -65,14 +64,14 @@ export default function AttendanceView({
     onUpdateAttendance(baseRecord);
   };
 
-  // Get total stats for the active date & cohort based on Sesi 1 and Sesi 2
+  // Get total stats for the active date based on Sesi 1 and Sesi 2
   const getClassStats = () => {
     let presentCount = 0;
     let lateCount = 0;
     let sickCount = 0;
     let absentCount = 0;
 
-    cohortStudents.forEach(s => {
+    activeStudents.forEach(s => {
       ['morning', 'classSession'].forEach(session => {
         const stat = getStatusForStudent(s.id, session as any);
         if (stat === 'Present') presentCount++;
@@ -82,7 +81,7 @@ export default function AttendanceView({
       });
     });
 
-    const totalSessions = totalInCohort * 2;
+    const totalSessions = totalActive * 2;
     if (totalSessions === 0) return { rate: 100, present: 0, late: 0, absent: 0 };
     
     // Formula: (Present + Late / 2) / Total Sessions
@@ -138,7 +137,7 @@ export default function AttendanceView({
           </p>
         </div>
 
-        {/* Date / Cohort select controls */}
+        {/* Date select controls */}
         <div className="flex gap-2 items-center select-none">
           <button
             onClick={onPrintClick}
@@ -153,15 +152,6 @@ export default function AttendanceView({
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
           />
-          <select
-            className="bg-white border border-slate-200 rounded p-1.5 text-xs font-semibold text-slate-700"
-            value={selectedCohort}
-            onChange={(e) => setSelectedCohort(e.target.value)}
-          >
-            <option value="Cohort 23">Cohort 23</option>
-            <option value="Cohort 24">Cohort 24</option>
-            <option value="Cohort 25">Cohort 25</option>
-          </select>
         </div>
       </div>
 
@@ -169,7 +159,7 @@ export default function AttendanceView({
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         
         <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-3xs flex flex-col justify-between">
-          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Cohort Daily Rate</span>
+          <span className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Daily Rate</span>
           <div className="flex items-baseline gap-1 mt-1">
             <h4 className="text-2xl font-bold text-slate-900">{stats.rate}%</h4>
             <span className="text-[10px] text-green-600 font-bold">▲ Target</span>
@@ -215,7 +205,7 @@ export default function AttendanceView({
         <div className="lg:col-span-8 bg-white border border-slate-200 rounded-lg p-5 shadow-3xs">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
             <h3 className="text-xs font-bold text-slate-900 uppercase">
-              Presensi Mandiri — {selectedCohort} ({selectedDate})
+              Presensi Mandiri — Fuji Elite Class ({selectedDate})
             </h3>
             <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded font-mono font-medium">
               Verifikasi 2-Sesi Aktif
@@ -232,7 +222,7 @@ export default function AttendanceView({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {cohortStudents.map(st => {
+                {activeStudents.map(st => {
                   const morningStat = getStatusForStudent(st.id, 'morning');
                   const classStat = getStatusForStudent(st.id, 'classSession');
 
@@ -301,7 +291,7 @@ export default function AttendanceView({
               <Activity className="h-4 w-4 text-slate-400" />
             </h3>
             
-            <p className="text-[10px] text-slate-400 mt-2">Historic daily overview for {selectedCohort}, illustrating critical spots:</p>
+            <p className="text-[10px] text-slate-400 mt-2">Historic daily overview for Fuji Elite Class, illustrating critical spots:</p>
             
             <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-bold mt-3">
               <span className="text-slate-400 text-left">Day</span>
@@ -349,7 +339,7 @@ export default function AttendanceView({
                   <div className="flex justify-between items-start">
                     <div>
                       <strong className="text-red-950 block">{st.name}</strong>
-                      <span className="text-[10px] text-red-600 font-medium">{st.id} • {st.cohort}</span>
+                      <span className="text-[10px] text-red-600 font-medium">{st.id} • {st.classroom}</span>
                     </div>
                     <span className="font-mono font-bold text-red-700 text-sm bg-red-100 px-1 rounded">
                       {Math.round(st.attendanceRate * 100)}%

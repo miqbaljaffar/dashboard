@@ -10,7 +10,6 @@ export interface Student {
   name: string;
   gender: 'Male' | 'Female';
   age: number;
-  cohort: string;
   classroom: string;
   enrollmentDate: string;
   graduationTarget: string;
@@ -32,7 +31,6 @@ export interface AttendanceRecord {
 export interface Assignment {
   id: string;
   title: string;
-  cohort: string;
   dueDate: string;
   submissions?: AssignmentSubmission[];
 }
@@ -48,7 +46,6 @@ export interface GradeColumn {
   id: string;
   title: string;
   type: 'Kuis' | 'Ulangan';
-  cohort: string;
   date: string;
   scores?: StudentGrade[];
 }
