@@ -73,7 +73,7 @@ model StudentGrade {
   id            String   @id @default(uuid())
   gradeColumnId String
   studentId     String
-  score         Int?     // Nullable for empty input initially
+  score         Float?     // Nullable for empty input initially
 
   student       Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
   gradeColumn   GradeColumn @relation(fields: [gradeColumnId], references: [id], onDelete: Cascade)

@@ -115,8 +115,10 @@ export default function AcademiaView({
 
   // Score typing validation
   const handleScoreChange = (gradeId: string, value: string) => {
-    if (value !== '' && !/^\d+$/.test(value)) return;
-    if (value !== '' && parseInt(value) > 100) return;
+    if (value !== '' && !/^\d*[.,]?\d*$/.test(value)) return;
+    
+    const normalizedVal = parseFloat(value.replace(',', '.'));
+    if (!isNaN(normalizedVal) && normalizedVal > 100) return;
 
     setLocalScores(prev => ({
       ...prev,
@@ -127,7 +129,7 @@ export default function AcademiaView({
   // Score save trigger
   const handleScoreBlur = (gradeId: string, currentScore: number | null, columnId: string) => {
     const localVal = localScores[gradeId] ?? '';
-    const parsedVal = localVal === '' ? null : parseInt(localVal);
+    const parsedVal = localVal === '' ? null : parseFloat(localVal.replace(',', '.'));
 
     if (currentScore === parsedVal) return;
     onUpdateStudentGrade(gradeId, columnId, parsedVal);
@@ -475,7 +477,7 @@ export default function AcademiaView({
                           <tr key={student.id} className="hover:bg-slate-55/20 transition-colors">
                             <td className="py-2.5 px-3">
                               <p className="font-bold text-slate-900">{student.name}</p>
-                              <p className="text-[10px] text-slate-455 font-mono">{student.id} • {student.classroom}</p>
+                              <p className="text-[10px] text-slate-455 font-mono">{student.id}</p>
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               {sub ? (
@@ -549,7 +551,7 @@ export default function AcademiaView({
                           <tr key={student.id} className="hover:bg-slate-55/20 transition-colors">
                             <td className="py-2.5 px-3">
                               <p className="font-bold text-slate-900">{student.name}</p>
-                              <p className="text-[10px] text-slate-455 font-mono">{student.id} • {student.classroom}</p>
+                              <p className="text-[10px] text-slate-455 font-mono">{student.id}</p>
                             </td>
                             <td className="py-2.5 px-3 text-center">
                               {scoreObj ? (

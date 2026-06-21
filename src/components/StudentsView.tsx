@@ -177,7 +177,6 @@ export default function StudentsView({
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[9px] bg-slate-50/50 select-none">
                   <th className="py-3 px-4">Informasi Siswa</th>
-                  <th className="py-3 px-4">Kelas</th>
                   <th className="py-3 px-4">Poin Perilaku</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-center w-28">Aksi</th>
@@ -214,23 +213,7 @@ export default function StudentsView({
                         </div>
                       </td>
 
-                      {/* Classroom */}
-                      <td className="py-3 px-4">
-                        {isEditing ? (
-                          <div className="flex flex-col gap-1.5 max-w-[150px]">
-                            <input
-                              type="text"
-                              className="border border-slate-200 rounded px-1 py-0.5 text-[11px] focus:outline-hidden"
-                              value={editClassroom}
-                              onChange={(e) => setEditClassroom(e.target.value)}
-                            />
-                          </div>
-                        ) : (
-                          <div>
-                            <p className="font-semibold text-slate-800">{st.classroom}</p>
-                          </div>
-                        )}
-                      </td>
+
 
                       {/* Behavior Score Points */}
                       <td className="py-3 px-4 font-mono font-bold">
@@ -396,18 +379,7 @@ export default function StudentsView({
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Nama Ruang Kelas</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: Sakura Class"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-semibold focus:outline-hidden"
-                    value={newClassroom}
-                    onChange={(e) => setNewClassroom(e.target.value)}
-                  />
-                </div>
-                <div>
+                <div className="col-span-2">
                   <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Tanggal Masuk</label>
                   <input
                     type="date"

@@ -230,7 +230,7 @@ export default function AttendanceView({
                     <tr key={st.id} className="hover:bg-slate-50/50 transition">
                       <td className="py-3 px-3">
                         <p className="font-bold text-slate-900">{st.name}</p>
-                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{st.id} • {st.classroom}</p>
+                        <p className="text-[10px] text-slate-400 font-mono mt-0.5">{st.id}</p>
                       </td>
                       
                       {/* Sesi 1 Shift */}
@@ -339,7 +339,7 @@ export default function AttendanceView({
                   <div className="flex justify-between items-start">
                     <div>
                       <strong className="text-red-950 block">{st.name}</strong>
-                      <span className="text-[10px] text-red-600 font-medium">{st.id} • {st.classroom}</span>
+                      <span className="text-[10px] text-red-600 font-medium">{st.id}</span>
                     </div>
                     <span className="font-mono font-bold text-red-700 text-sm bg-red-100 px-1 rounded">
                       {Math.round(st.attendanceRate * 100)}%
