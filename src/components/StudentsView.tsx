@@ -43,6 +43,7 @@ export default function StudentsView({
   // Inline editing states
   const [editingStudentId, setEditingStudentId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editAge, setEditAge] = useState(20);
   const [editClassroom, setEditClassroom] = useState('');
   const [editStatus, setEditStatus] = useState<Student['status']>('Active');
 
@@ -91,6 +92,7 @@ export default function StudentsView({
     const updated: Student = {
       ...student,
       name: editName.trim(),
+      age: Number(editAge),
       classroom: editClassroom,
       status: editStatus
     };
@@ -102,6 +104,7 @@ export default function StudentsView({
   const startEditing = (s: Student) => {
     setEditingStudentId(s.id);
     setEditName(s.name);
+    setEditAge(s.age);
     setEditClassroom(s.classroom);
     setEditStatus(s.status);
   };
@@ -199,16 +202,31 @@ export default function StudentsView({
                           </div>
                           <div className="min-w-0">
                             {isEditing ? (
-                              <input
-                                type="text"
-                                className="border border-slate-200 rounded px-1.5 py-0.5 font-bold text-slate-900 text-xs w-48 focus:outline-hidden focus:border-blue-500"
-                                value={editName}
-                                onChange={(e) => setEditName(e.target.value)}
-                              />
+                              <div className="flex flex-col gap-1">
+                                <input
+                                  type="text"
+                                  className="border border-slate-200 rounded px-1.5 py-0.5 font-bold text-slate-900 text-xs w-48 focus:outline-hidden focus:border-blue-500"
+                                  value={editName}
+                                  onChange={(e) => setEditName(e.target.value)}
+                                />
+                                <div className="flex items-center gap-1 text-[10px] text-slate-400 font-mono mt-0.5">
+                                  <span>{st.id} • Umur:</span>
+                                  <input
+                                    type="number"
+                                    min="1"
+                                    max="100"
+                                    className="border border-slate-200 rounded px-1 py-0.5 text-[10px] w-12 focus:outline-hidden focus:border-blue-500 font-bold"
+                                    value={editAge}
+                                    onChange={(e) => setEditAge(Number(e.target.value))}
+                                  />
+                                </div>
+                              </div>
                             ) : (
-                              <p className="font-bold text-slate-900 truncate">{st.name}</p>
+                              <>
+                                <p className="font-bold text-slate-900 truncate">{st.name}</p>
+                                <p className="text-[10px] text-slate-400 font-mono mt-0.5">{st.id} • Umur {st.age}</p>
+                              </>
                             )}
-                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">{st.id} • Umur {st.age}</p>
                           </div>
                         </div>
                       </td>
