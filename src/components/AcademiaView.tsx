@@ -468,7 +468,7 @@ export default function AcademiaView({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {students.filter(s => s.status === 'Active' && s.cohort === selectedCohort).map(student => {
+                      {students.filter(s => s.status === 'Active').map(student => {
                         const sub = activeAssignment.submissions?.find(s => s.studentId === student.id);
                         
                         return (
@@ -541,7 +541,7 @@ export default function AcademiaView({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
-                      {students.filter(s => s.status === 'Active' && s.cohort === selectedCohort).map(student => {
+                      {students.filter(s => s.status === 'Active').map(student => {
                         const scoreObj = activeGradeCol.scores?.find(s => s.studentId === student.id);
                         const displayVal = scoreObj ? (localScores[scoreObj.id] ?? '') : '';
 

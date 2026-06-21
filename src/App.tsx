@@ -108,11 +108,15 @@ export default function App() {
         // Fallback local calculation
         setStudentsState(prev => prev.map(s => {
           if (s.id === record.studentId) {
-            const studentRecs = [...attendanceState, record].filter(a => a.studentId === s.id);
+            const otherRecs = attendanceState.filter(a => a.studentId === s.id && a.date !== record.date);
+            const studentRecs = [...otherRecs, record];
             let presentCount = 0;
             studentRecs.forEach(a => {
-              if (a.morning === 'Present') presentCount++;
-              if (a.classSession === 'Present') presentCount++;
+              if (a.morning === 'Present') presentCount += 1.0;
+              else if (a.morning === 'Late') presentCount += 0.5;
+
+              if (a.classSession === 'Present') presentCount += 1.0;
+              else if (a.classSession === 'Late') presentCount += 0.5;
             });
             const total = studentRecs.length * 2 || 1;
             const newRate = presentCount / total;

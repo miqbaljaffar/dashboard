@@ -126,8 +126,11 @@ app.post('/api/attendance', async (req, res) => {
     });
     let presentCount = 0;
     allRecords.forEach(r => {
-      if (r.morning === 'Present') presentCount++;
-      if (r.classSession === 'Present') presentCount++;
+      if (r.morning === 'Present') presentCount += 1.0;
+      else if (r.morning === 'Late') presentCount += 0.5;
+
+      if (r.classSession === 'Present') presentCount += 1.0;
+      else if (r.classSession === 'Late') presentCount += 0.5;
     });
     const total = allRecords.length * 2 || 1;
     const attendanceRate = Number((presentCount / total).toFixed(2));
@@ -146,20 +149,20 @@ app.post('/api/attendance', async (req, res) => {
 
 // Dynamic Assignments CRUD
 app.post('/api/assignments', async (req, res) => {
-  const { title, cohort, dueDate } = req.body;
+  const { title, dueDate } = req.body;
   try {
     const assignment = await prisma.assignment.create({
-      data: { title, cohort, dueDate },
+      data: { title, dueDate },
     });
     
-    // Auto-create submissions sheet for all active students in the cohort
-    const cohortStudents = await prisma.student.findMany({
-      where: { cohort, status: 'Active' },
+    // Auto-create submissions sheet for all active students
+    const activeStudents = await prisma.student.findMany({
+      where: { status: 'Active' },
     });
     
-    if (cohortStudents.length > 0) {
+    if (activeStudents.length > 0) {
       await prisma.assignmentSubmission.createMany({
-        data: cohortStudents.map(st => ({
+        data: activeStudents.map(st => ({
           assignmentId: assignment.id,
           studentId: st.id,
           submitted: false
@@ -224,20 +227,20 @@ app.put('/api/submissions/:id', async (req, res) => {
 
 // Dynamic Grade Columns CRUD (Quizzes & Exams)
 app.post('/api/grades', async (req, res) => {
-  const { title, type, cohort, date } = req.body;
+  const { title, type, date } = req.body;
   try {
     const gradeColumn = await prisma.gradeColumn.create({
-      data: { title, type, cohort, date }
+      data: { title, type, date }
     });
 
-    // Auto-create empty scores for all active students in the cohort
-    const cohortStudents = await prisma.student.findMany({
-      where: { cohort, status: 'Active' },
+    // Auto-create empty scores for all active students
+    const activeStudents = await prisma.student.findMany({
+      where: { status: 'Active' },
     });
 
-    if (cohortStudents.length > 0) {
+    if (activeStudents.length > 0) {
       await prisma.studentGrade.createMany({
-        data: cohortStudents.map(st => ({
+        data: activeStudents.map(st => ({
           gradeColumnId: gradeColumn.id,
           studentId: st.id,
           score: null
