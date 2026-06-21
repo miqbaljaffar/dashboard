@@ -567,6 +567,17 @@ export default function AcademiaView({
                                     onKeyDown={(e) => handleScoreKeyDown(e, scoreObj.id, scoreObj.score, activeGradeCol.id)}
                                   />
                                   <span className="text-[10px] font-bold text-slate-400 font-mono">/100</span>
+                                  {displayVal !== (scoreObj.score !== null ? String(scoreObj.score) : '') && (
+                                    <button
+                                      onMouseDown={(e) => {
+                                        e.preventDefault();
+                                        handleScoreBlur(scoreObj.id, scoreObj.score, activeGradeCol.id);
+                                      }}
+                                      className="px-2 py-0.5 bg-blue-600 hover:bg-blue-700 text-white rounded text-[10px] font-bold transition shadow-xs cursor-pointer"
+                                    >
+                                      Simpan
+                                    </button>
+                                  )}
                                 </div>
                               ) : (
                                 <span className="text-[10px] text-slate-400 font-medium italic">Record missing</span>
