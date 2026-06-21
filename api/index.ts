@@ -20,29 +20,31 @@ app.use(express.json());
 
 // Behavior Score Recalculator Helper
 async function recalculateStudentBehaviorScore(studentId: string) {
-  const student = await prisma.student.findUnique({ where: { id: studentId } });
-  if (!student) return null;
+  return await prisma.$transaction(async (tx) => {
+    const student = await tx.student.findUnique({ where: { id: studentId } });
+    if (!student) return null;
 
-  const incidents = await prisma.behavioralIncidence.findMany({ where: { studentId } });
-  const rewards = await prisma.behavioralReward.findMany({ where: { studentId } });
+    const incidents = await tx.behavioralIncidence.findMany({ where: { studentId } });
+    const rewards = await tx.behavioralReward.findMany({ where: { studentId } });
 
-  let score = 100;
-  incidents.forEach(inc => {
-    score -= inc.pointsDeducted;
-  });
-  rewards.forEach(rew => {
-    score += rew.pointsAdded;
-  });
+    let score = 100;
+    incidents.forEach(inc => {
+      score -= inc.pointsDeducted;
+    });
+    rewards.forEach(rew => {
+      score += rew.pointsAdded;
+    });
 
-  score = Math.max(0, Math.min(100, score));
-  const violationsCount = incidents.length;
+    score = Math.max(0, Math.min(100, score));
+    const violationsCount = incidents.length;
 
-  return await prisma.student.update({
-    where: { id: studentId },
-    data: {
-      behaviorScore: score,
-      violationsCount
-    }
+    return await tx.student.update({
+      where: { id: studentId },
+      data: {
+        behaviorScore: score,
+        violationsCount
+      }
+    });
   });
 }
 
@@ -78,6 +80,31 @@ app.post('/api/students', async (req, res) => {
     const student = await prisma.student.create({
       data: req.body,
     });
+
+    // Create empty submissions for existing assignments
+    const assignments = await prisma.assignment.findMany();
+    if (assignments.length > 0) {
+      await prisma.assignmentSubmission.createMany({
+        data: assignments.map(a => ({
+          assignmentId: a.id,
+          studentId: student.id,
+          submitted: false
+        }))
+      });
+    }
+
+    // Create empty grades for existing grade columns
+    const gradeColumns = await prisma.gradeColumn.findMany();
+    if (gradeColumns.length > 0) {
+      await prisma.studentGrade.createMany({
+        data: gradeColumns.map(g => ({
+          gradeColumnId: g.id,
+          studentId: student.id,
+          score: null
+        }))
+      });
+    }
+
     res.status(201).json(student);
   } catch (error) {
     console.error('Error creating student:', error);

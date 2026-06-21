@@ -74,11 +74,18 @@ export default function App() {
     })
       .then(() => {
         setStudentsState(prev => prev.filter(s => s.id !== id));
+        setAttendanceState(prev => prev.filter(a => a.studentId !== id));
+        setIncidentsState(prev => prev.filter(i => i.studentId !== id));
+        setRewardsState(prev => prev.filter(r => r.studentId !== id));
       })
       .catch(err => console.error('Failed to sync student delete to DB:', err));
   };
 
   const handleUpdateAttendance = (record: AttendanceRecord) => {
+    // Backup states for rollback
+    const previousAttendance = [...attendanceState];
+    const previousStudents = [...studentsState];
+
     // Optimistic update of attendance record
     setAttendanceState(prev => {
       const idx = prev.findIndex(a => a.studentId === record.studentId && a.date === record.date);
@@ -96,7 +103,8 @@ export default function App() {
       body: JSON.stringify(record),
     })
       .then(res => {
-        if (res.ok) return res.json();
+        if (!res.ok) throw new Error('API server returned error status');
+        return res.json();
       })
       .then(data => {
         if (data && data.student) {
@@ -104,29 +112,11 @@ export default function App() {
         }
       })
       .catch(err => {
-        console.error('Failed to sync attendance update to DB:', err);
-        // Fallback local calculation
-        setStudentsState(prev => prev.map(s => {
-          if (s.id === record.studentId) {
-            const otherRecs = attendanceState.filter(a => a.studentId === s.id && a.date !== record.date);
-            const studentRecs = [...otherRecs, record];
-            let presentCount = 0;
-            studentRecs.forEach(a => {
-              if (a.morning === 'Present') presentCount += 1.0;
-              else if (a.morning === 'Late') presentCount += 0.5;
-
-              if (a.classSession === 'Present') presentCount += 1.0;
-              else if (a.classSession === 'Late') presentCount += 0.5;
-            });
-            const total = studentRecs.length * 2 || 1;
-            const newRate = presentCount / total;
-            return {
-              ...s,
-              attendanceRate: Number(newRate.toFixed(2))
-            };
-          }
-          return s;
-        }));
+        console.error('Failed to sync attendance update to DB, rolling back:', err);
+        // Rollback states to previous to prevent out-of-sync UI
+        setAttendanceState(previousAttendance);
+        setStudentsState(previousStudents);
+        alert('Gagal menyinkronkan data presensi ke server. Perubahan dibatalkan.');
       });
   };
 

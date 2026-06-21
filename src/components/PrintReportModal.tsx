@@ -159,7 +159,6 @@ export default function PrintReportModal({
             <tr className="border-b border-slate-200 text-slate-400 text-[10px] uppercase font-bold bg-slate-50">
               <th className="py-2 px-3">Nama Siswa</th>
               <th className="py-2 px-3">Nomor ID</th>
-              <th className="py-2 px-3">Kelas & Room</th>
               <th className="py-2 px-3 text-center">Poin Perilaku</th>
               <th className="py-2 px-3 text-center">Rata Presensi</th>
             </tr>
@@ -169,7 +168,6 @@ export default function PrintReportModal({
               <tr key={st.id} className="border-b border-slate-100">
                 <td className="py-2 px-3 font-semibold text-slate-800">{st.name}</td>
                 <td className="py-2 px-3 font-mono">{st.id}</td>
-                <td className="py-2 px-3">{st.classroom}</td>
                 <td className="py-2 px-3 text-center font-bold text-green-700">{st.behaviorScore} Pts</td>
                 <td className="py-2 px-3 text-center font-mono font-semibold">{Math.round(st.attendanceRate * 100)}%</td>
               </tr>
@@ -224,7 +222,6 @@ export default function PrintReportModal({
             <th className="py-2 px-3">Nama Lengkap</th>
             <th className="py-2 px-3 w-16 text-center">Gender</th>
             <th className="py-2 px-3 w-12 text-center">Umur</th>
-            <th className="py-2 px-3">Kelas</th>
             <th className="py-2 px-3 text-center">Poin Perilaku</th>
             <th className="py-2 px-3 text-center">Presensi</th>
             <th className="py-2 px-3 text-center w-20">Status</th>
@@ -238,7 +235,6 @@ export default function PrintReportModal({
               <td className="py-2 px-3 font-bold text-slate-850">{st.name}</td>
               <td className="py-2 px-3 text-center">{st.gender === 'Male' ? 'L' : 'P'}</td>
               <td className="py-2 px-3 text-center font-mono">{st.age} th</td>
-              <td className="py-2 px-3">{st.classroom}</td>
               <td className="py-2 px-3 text-center font-bold">
                 <span className={st.behaviorScore >= 85 ? 'text-green-700' : st.behaviorScore >= 70 ? 'text-amber-700' : 'text-red-700'}>
                   {st.behaviorScore} Pts
@@ -288,7 +284,6 @@ export default function PrintReportModal({
               <th className="py-2.5 px-2 w-8 text-center">No</th>
               <th className="py-2.5 px-3">Nama Siswa</th>
               <th className="py-2.5 px-3">ID Siswa</th>
-              <th className="py-2.5 px-3">Kelas</th>
               <th className="py-2.5 px-3 text-center">Sesi Pagi (08:30)</th>
               <th className="py-2.5 px-3 text-center">Sesi Siang (13:00)</th>
             </tr>
@@ -314,7 +309,6 @@ export default function PrintReportModal({
                   <td className="py-2.5 px-2 text-center font-mono text-slate-400">{i + 1}</td>
                   <td className="py-2.5 px-3 font-bold text-slate-800">{st.name}</td>
                   <td className="py-2.5 px-3 font-mono text-slate-500">{st.id}</td>
-                  <td className="py-2.5 px-3">{st.classroom}</td>
                   <td className="py-2.5 px-3 text-center">
                     <span className={`px-2 py-0.5 rounded text-[10px] font-semibold border ${getStatusBadge(morn)}`}>
                       {morn}
@@ -676,9 +670,6 @@ export default function PrintReportModal({
                     <div className="text-right">
                       <span className="text-[10px] font-mono text-slate-500 block">Tanggal Cetak: 16-06-2026</span>
                       <span className="text-[10px] font-mono text-slate-500 block mt-0.5">Oleh: Sensei Pengajar</span>
-                      <span className={`inline-block mt-2 text-[9px] font-bold px-2 py-0.5 rounded border ${theme.accent}`}>
-                        Fuji Elite Class
-                      </span>
                     </div>
                   </div>
 
@@ -758,9 +749,6 @@ export default function PrintReportModal({
           <div className="text-right">
             <span className="text-[9px] font-mono text-slate-600 block">Tanggal: 16-06-2026</span>
             <span className="text-[9px] font-mono text-slate-600 block">Oleh: Sensei Pengajar</span>
-            <span className={`inline-block mt-1.5 text-[9px] font-bold px-1.5 py-0.5 rounded border border-slate-300`}>
-              Fuji Elite Class
-            </span>
           </div>
         </div>
 

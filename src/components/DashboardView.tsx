@@ -402,7 +402,6 @@ export default function DashboardView({
                       <span className="font-semibold text-slate-700">{student.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-[10px] text-slate-500">{student.classroom}</span>
                       <span className="font-bold text-green-700 font-mono">Kuis Avg: {student.quizScore}</span>
                       <span className="text-[10px] bg-green-50 text-green-700 border border-green-100 px-1.5 py-0.5 rounded font-mono font-bold">
                         {student.behaviorScore} pts
