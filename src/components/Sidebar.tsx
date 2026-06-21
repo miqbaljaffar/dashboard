@@ -5,19 +5,22 @@ import {
   CalendarCheck,
   BookOpen,
   ShieldAlert,
-  GraduationCap
+  GraduationCap,
+  LogOut
 } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   totalViolationsCount: number;
+  onLogout?: () => void;
 }
 
 export default function Sidebar({
   activeTab,
   setActiveTab,
-  totalViolationsCount
+  totalViolationsCount,
+  onLogout
 }: SidebarProps) {
   
   const menuItems = [
@@ -85,14 +88,23 @@ export default function Sidebar({
       </nav>
 
       {/* Access Summary Footer */}
-      <div className="p-4 border-t border-slate-100 bg-slate-50/50">
+      <div className="p-4 border-t border-slate-100 bg-slate-50/50 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-emerald-500"></div>
           <span className="text-[10px] font-mono text-slate-500">
             System Level: Admin/Teacher
           </span>
         </div>
-        <p className="text-[9px] text-slate-400 mt-0.5">
+        {onLogout && (
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center justify-center gap-1.5 py-1.5 border border-red-200 hover:bg-red-50 text-red-650 hover:text-red-700 font-bold text-[10.5px] rounded-lg transition duration-200 cursor-pointer no-print"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+            Log Out
+          </button>
+        )}
+        <p className="text-[9px] text-slate-400 font-medium leading-none">
           Japanese Language Training Hub v2.0.0
         </p>
       </div>

@@ -7,10 +7,14 @@ import AttendanceView from './components/AttendanceView';
 import AcademiaView from './components/AcademiaView';
 import DisciplineView from './components/DisciplineView';
 import StudentsView from './components/StudentsView';
-import { GraduationCap, Printer } from 'lucide-react';
+import { GraduationCap, Printer, LogOut } from 'lucide-react';
 import PrintReportModal from './components/PrintReportModal';
+import Login from './components/Login';
 
 export default function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    return localStorage.getItem('isLoggedIn') === 'true';
+  });
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [printTabOverride, setPrintTabOverride] = useState<string | undefined>(undefined);
@@ -18,6 +22,11 @@ export default function App() {
   const handleOpenPrint = (tab?: string) => {
     setPrintTabOverride(tab);
     setIsPrintModalOpen(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('isLoggedIn');
+    setIsLoggedIn(false);
   };
   
   // Business entities lists states
@@ -415,6 +424,13 @@ export default function App() {
     }
   };
 
+  if (!isLoggedIn) {
+    return <Login onLoginSuccess={() => {
+      localStorage.setItem('isLoggedIn', 'true');
+      setIsLoggedIn(true);
+    }} />;
+  }
+
   return (
     <>
       <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900 antialiased print:hidden">
@@ -445,6 +461,14 @@ export default function App() {
               Cetak Laporan
             </button>
 
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 px-3 py-1.5 border border-slate-250 hover:bg-slate-50 text-slate-700 font-bold text-[10.5px] rounded-lg shadow-xs transition duration-200 cursor-pointer no-print"
+            >
+              <LogOut className="h-3.5 w-3.5 text-red-500" />
+              Logout
+            </button>
+
             <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/60 rounded-md px-2.5 py-1 text-[10px]">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
               <span className="text-slate-700 font-semibold">
@@ -473,6 +497,7 @@ export default function App() {
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             totalViolationsCount={activeViolationsCount}
+            onLogout={handleLogout}
           />
 
           {/* CONTENT STAGE WORKSPACE */}
