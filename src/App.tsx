@@ -32,6 +32,9 @@ export default function App() {
   const [studentsState, setStudentsState] = useState<Student[]>(initialStudents);
   const [attendanceState, setAttendanceState] = useState<AttendanceRecord[]>(initialAttendance);
   
+  // Sort alphabetically by name
+  const sortedStudents = [...studentsState].sort((a, b) => a.name.localeCompare(b.name));
+  
   // Dynamic Academic States
   const [assignmentsState, setAssignmentsState] = useState<Assignment[]>([]);
   const [gradesState, setGradesState] = useState<GradeColumn[]>([]);
@@ -246,7 +249,7 @@ export default function App() {
       case 'dashboard':
         return (
           <DashboardView
-            students={studentsState}
+            students={sortedStudents}
             attendance={attendanceState}
             assignments={assignmentsState}
             grades={gradesState}
@@ -257,7 +260,7 @@ export default function App() {
       case 'students':
         return (
           <StudentsView
-            students={studentsState}
+            students={sortedStudents}
             onAddStudent={handleAddStudent}
             onUpdateStudent={handleUpdateStudent}
             onDeleteStudent={handleDeleteStudent}
@@ -267,7 +270,7 @@ export default function App() {
       case 'attendance':
         return (
           <AttendanceView
-            students={studentsState}
+            students={sortedStudents}
             attendance={attendanceState}
             onUpdateAttendance={handleUpdateAttendance}
             onPrintClick={() => handleOpenPrint('attendance')}
@@ -276,7 +279,7 @@ export default function App() {
       case 'academia':
         return (
           <AcademiaView
-            students={studentsState}
+            students={sortedStudents}
             assignments={assignmentsState}
             grades={gradesState}
             onCreateAssignment={handleCreateAssignment}
@@ -386,7 +389,7 @@ export default function App() {
       <PrintReportModal
         isOpen={isPrintModalOpen}
         onClose={() => setIsPrintModalOpen(false)}
-        students={studentsState}
+        students={sortedStudents}
         attendance={attendanceState}
         assignments={assignmentsState}
         grades={gradesState}
