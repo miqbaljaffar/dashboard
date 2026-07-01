@@ -106,6 +106,19 @@ export default function PrintReportModal({
   });
   const avgQuiz = totalQuizCount ? Math.round(totalQuizScore / totalQuizCount) : 0;
 
+  const examColumns = grades.filter(g => g.type === 'Ulangan');
+  let totalExamScore = 0;
+  let totalExamCount = 0;
+  examColumns.forEach(g => {
+    g.scores?.forEach(s => {
+      if (studentIds.includes(s.studentId) && s.score !== null) {
+        totalExamScore += s.score;
+        totalExamCount++;
+      }
+    });
+  });
+  const avgExam = totalExamCount ? Math.round(totalExamScore / totalExamCount) : 0;
+
   // For each student, find their average quiz score across all quiz columns
   const studentQuizAverages = activeStudents.map(student => {
     let sum = 0;
@@ -124,6 +137,23 @@ export default function PrintReportModal({
     const avgQuiz = studentQuizAverages[idx];
     return s.attendanceRate < 0.82 || (avgQuiz !== null && avgQuiz < 75);
   }).length;
+
+  // Assignment submissions calculations
+  let totalExpectedSubmissions = 0;
+  let totalSubmittedCount = 0;
+  assignments.forEach(a => {
+    a.submissions?.forEach(sub => {
+      if (studentIds.includes(sub.studentId)) {
+        totalExpectedSubmissions++;
+        if (sub.submitted) {
+          totalSubmittedCount++;
+        }
+      }
+    });
+  });
+  const submissionRate = totalExpectedSubmissions > 0
+    ? Math.round((totalSubmittedCount / totalExpectedSubmissions) * 100)
+    : 0;
 
   const topPerformers = activeStudents
     .map((student, idx) => {
@@ -188,6 +218,20 @@ export default function PrintReportModal({
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Academic & Assignment Summary */}
+      <div className="grid grid-cols-2 gap-4 mt-4 text-xs">
+        <div className="border border-slate-200 p-3 rounded-lg bg-slate-50/50">
+          <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Rangkuman Kinerja Tugas</h4>
+          <p className="text-slate-700">Tingkat Penyerahan Tugas: <strong className="text-emerald-700">{submissionRate}%</strong></p>
+          <p className="text-[10px] text-slate-500 mt-1">Terisi {totalSubmittedCount} dari {totalExpectedSubmissions} total pengiriman berkas.</p>
+        </div>
+        <div className="border border-slate-200 p-3 rounded-lg bg-slate-50/50">
+          <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Evaluasi Rata-Rata Nilai</h4>
+          <p className="text-slate-700">Rata-Rata Kuis (Formatif): <strong className="text-slate-800 font-mono font-bold">{avgQuiz} Pts</strong></p>
+          <p className="text-slate-700 mt-0.5">Rata-Rata Ujian (Sumatif): <strong className="text-slate-800 font-mono font-bold">{avgExam} Pts</strong></p>
+        </div>
       </div>
     </div>
   );

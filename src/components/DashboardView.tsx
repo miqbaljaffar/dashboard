@@ -21,7 +21,9 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  Cell
+  Cell,
+  PieChart,
+  Pie
 } from 'recharts';
 
 interface DashboardViewProps {
@@ -177,6 +179,33 @@ export default function DashboardView({
 
   // riskDistData removed because behavior score chart is removed
 
+  // Assignment submissions calculations
+  let totalExpectedSubmissions = 0;
+  let totalSubmittedCount = 0;
+  assignments.forEach(a => {
+    a.submissions?.forEach(sub => {
+      if (activeStudents.some(s => s.id === sub.studentId)) {
+        totalExpectedSubmissions++;
+        if (sub.submitted) {
+          totalSubmittedCount++;
+        }
+      }
+    });
+  });
+
+  const taskSubmissionData = [
+    { name: 'Terkumpul', value: totalSubmittedCount, color: '#10B981' },
+    { name: 'Belum Kumpul', value: Math.max(0, totalExpectedSubmissions - totalSubmittedCount), color: '#F43F5E' }
+  ];
+
+  // Latest 3 assignments completion rate stats
+  const assignmentStats = assignments.slice(-3).map(a => {
+    const total = a.submissions?.filter(sub => activeStudents.some(s => s.id === sub.studentId)).length || 0;
+    const submitted = a.submissions?.filter(sub => sub.submitted && activeStudents.some(s => s.id === sub.studentId)).length || 0;
+    const percent = total > 0 ? Math.round((submitted / total) * 100) : 0;
+    return { title: a.title, percent };
+  });
+
   // Lists: Top performing students by quiz average
   const topPerformers = activeStudents
     .map((student, idx) => {
@@ -290,7 +319,7 @@ export default function DashboardView({
           <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Recharts Real-time Data</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="dashboard-charts-layout">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="dashboard-charts-layout">
           
           {/* Chart 1: Attendance Trend */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
@@ -336,17 +365,46 @@ export default function DashboardView({
             </div>
           </div>
 
+          {/* Chart 3: Assignment Submission Rate */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="mb-3">
+              <h4 className="text-xs font-bold text-slate-800">3. Tingkat Penyerahan Tugas</h4>
+              <p className="text-[10px] text-slate-400">Status pengumpulan tugas oleh seluruh siswa aktif</p>
+            </div>
+            <div className="h-52 flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={taskSubmissionData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={50}
+                    outerRadius={75}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {taskSubmissionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip contentStyle={{ fontSize: 11 }} />
+                  <Legend wrapperStyle={{ fontSize: 9 }} align="center" layout="horizontal" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
         </div>
       </div>
 
       {/* SYSTEM WIDGETS DECK */}
-      <div className="grid grid-cols-1 gap-6 pt-2">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
         
         {/* Widget 1: Top Performing Students Block */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
           <div>
             <div className="mb-3">
-              <h4 className="text-xs font-bold text-slate-800">3. Honor Roll: Siswa Berprestasi Terbaik</h4>
+              <h4 className="text-xs font-bold text-slate-800">4. Honor Roll: Siswa Berprestasi Terbaik</h4>
               <p className="text-[10px] text-slate-400">Diurutkan berdasarkan nilai kuis rata-rata</p>
             </div>
             <div className="space-y-2.5 mt-2">
@@ -360,6 +418,9 @@ export default function DashboardView({
                       <span className="font-semibold text-slate-700">{student.name}</span>
                     </div>
                     <div className="flex items-center gap-3">
+                      <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono font-bold">
+                        Presensi: {Math.round(student.attendanceRate * 100)}%
+                      </span>
                       <span className="font-bold text-green-700 font-mono">Kuis Avg: {student.quizScore}</span>
                     </div>
                   </div>
@@ -372,6 +433,64 @@ export default function DashboardView({
             className="mt-4 text-center text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 cursor-pointer"
           >
             Buka Lembar Tugas & Nilai <ChevronRight className="h-3 w-3" />
+          </button>
+        </div>
+
+        {/* Widget 2: Academic & Assignment Insights Block */}
+        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between">
+          <div>
+            <div className="mb-3">
+              <h4 className="text-xs font-bold text-slate-800">5. Analisis Tugas & Evaluasi Kelas</h4>
+              <p className="text-[10px] text-slate-400">Ringkasan pengumpulan tugas terbaru dan perbandingan tipe nilai</p>
+            </div>
+            
+            <div className="space-y-3.5 mt-3">
+              {/* Assignment Stats list */}
+              <div>
+                <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Penyelesaian Tugas Terbaru</span>
+                {assignmentStats.length === 0 ? (
+                  <p className="text-[11px] text-slate-500 italic py-2">Belum ada tugas aktif untuk dianalisis.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {assignmentStats.map(stat => (
+                      <div key={stat.title} className="text-xs">
+                        <div className="flex justify-between items-center mb-1 text-slate-700">
+                          <span className="font-medium truncate max-w-xs">{stat.title}</span>
+                          <span className="font-bold font-mono">{stat.percent}%</span>
+                        </div>
+                        <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              stat.percent >= 90 ? 'bg-emerald-500' : stat.percent >= 75 ? 'bg-blue-500' : 'bg-rose-500'
+                            }`}
+                            style={{ width: `${stat.percent}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Formative vs Sumative breakdown */}
+              <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-center">
+                  <span className="text-[9px] text-slate-400 font-bold uppercase block">Rata-Rata Kuis (Formatur)</span>
+                  <span className="text-lg font-black text-slate-800 font-mono mt-1 block">{avgQuizScore || '-'}</span>
+                </div>
+                <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-center">
+                  <span className="text-[9px] text-slate-400 font-bold uppercase block">Rata-Rata Ujian (Sumatif)</span>
+                  <span className="text-lg font-black text-slate-800 font-mono mt-1 block">{avgExamScore || '-'}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => onNavigate('academia')}
+            className="w-full mt-4 text-center text-[10px] font-bold text-blue-600 hover:text-blue-700 block cursor-pointer"
+          >
+            Buka Analisis & Nilai Lengkap
           </button>
         </div>
 
