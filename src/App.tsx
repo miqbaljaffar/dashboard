@@ -39,6 +39,9 @@ export default function App() {
   const [assignmentsState, setAssignmentsState] = useState<Assignment[]>([]);
   const [gradesState, setGradesState] = useState<GradeColumn[]>([]);
 
+  // Focus Analysis State (Collective vs Individual)
+  const [selectedStudentId, setSelectedStudentId] = useState<string>('all');
+
   // Sync data from database backend on load
   useEffect(() => {
     async function loadData() {
@@ -253,6 +256,8 @@ export default function App() {
             attendance={attendanceState}
             assignments={assignmentsState}
             grades={gradesState}
+            selectedStudentId={selectedStudentId}
+            onSelectedStudentChange={setSelectedStudentId}
             onNavigate={(id) => setActiveTab(id)}
             onPrintClick={() => handleOpenPrint('dashboard')}
           />
@@ -394,6 +399,7 @@ export default function App() {
         assignments={assignmentsState}
         grades={gradesState}
         initialTab={printTabOverride || activeTab}
+        selectedStudentId={selectedStudentId}
       />
     </>
   );

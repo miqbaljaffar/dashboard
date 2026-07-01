@@ -19,6 +19,7 @@ interface PrintReportModalProps {
   assignments: Assignment[];
   grades: GradeColumn[];
   initialTab?: string;
+  selectedStudentId?: string;
 }
 
 export default function PrintReportModal({
@@ -28,7 +29,8 @@ export default function PrintReportModal({
   attendance,
   assignments,
   grades,
-  initialTab = 'dashboard'
+  initialTab = 'dashboard',
+  selectedStudentId = 'all'
 }: PrintReportModalProps) {
   const [reportType, setReportType] = useState<string>(initialTab);
   const [customTitle, setCustomTitle] = useState<string>('');
@@ -168,73 +170,249 @@ export default function PrintReportModal({
       quizScore: Math.round(item.avg || 0)
     }));
 
+  const isIndividualFocus = selectedStudentId !== undefined && selectedStudentId !== 'all';
+  const selectedStudent = students.find(s => s.id === selectedStudentId);
+
   // Render components inside the Preview and Print View
-  const renderDashboardReport = () => (
-    <div className="space-y-6">
-      {/* KPI Cards */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Siswa</span>
-          <strong className="text-lg text-slate-900 block mt-1">{filteredStudents.length} Orang</strong>
-          <span className="text-[9px] text-slate-500">Aktif: {activeStudents.length} | Cuti: {filteredStudents.filter(s => s.status === 'Leave').length}</span>
-        </div>
-        <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Kehadiran Kelas</span>
-          <strong className="text-lg text-slate-900 block mt-1">{avgAttendance}%</strong>
-          <span className="text-[9px] text-red-500 font-semibold">Min Target: 95%</span>
-        </div>
-        <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Rata Nilai Kuis</span>
-          <strong className="text-lg text-slate-900 block mt-1">{avgQuiz} Poin</strong>
-          <span className="text-[9px] text-slate-500">Dari {quizColumns.length} kuis aktif</span>
-        </div>
-        <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Siswa At-Risk</span>
-          <strong className={`text-lg block mt-1 ${atRiskCount > 0 ? 'text-red-600 font-bold' : 'text-slate-900'}`}>{atRiskCount} Siswa</strong>
-          <span className="text-[9px] text-slate-500">Butuh Bimbingan</span>
-        </div>
-      </div>
+  const renderDashboardReport = () => {
+    if (isIndividualFocus && selectedStudent) {
+      // Calculate student-specific stats
+      const studentIndex = activeStudents.findIndex(s => s.id === selectedStudentId);
+      const studentQuizAvg = studentIndex !== -1 ? studentQuizAverages[studentIndex] : null;
+      const displayQuizAvg = studentQuizAvg !== null ? Math.round(studentQuizAvg) : 0;
 
-      {/* Top Performers Table */}
-      <div className="space-y-2">
-        <h3 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase">Top Performing Trainees</h3>
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-slate-200 text-slate-400 text-[10px] uppercase font-bold bg-slate-50">
-              <th className="py-2 px-3">Nama Siswa</th>
-              <th className="py-2 px-3">Nomor ID</th>
-              <th className="py-2 px-3 text-center">Rata Nilai Kuis</th>
-              <th className="py-2 px-3 text-center">Rata Presensi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topPerformers.map(st => (
-              <tr key={st.id} className="border-b border-slate-100">
-                <td className="py-2 px-3 font-semibold text-slate-800">{st.name}</td>
-                <td className="py-2 px-3 font-mono">{st.id}</td>
-                <td className="py-2 px-3 text-center font-bold text-green-700">{st.quizScore} Pts</td>
-                <td className="py-2 px-3 text-center font-mono font-semibold">{Math.round(st.attendanceRate * 100)}%</td>
+      // Student specific exam average
+      let studentExamSum = 0;
+      let studentExamCount = 0;
+      examColumns.forEach(g => {
+        const scoreObj = g.scores?.find(s => s.studentId === selectedStudentId);
+        if (scoreObj && scoreObj.score !== null) {
+          studentExamSum += scoreObj.score;
+          studentExamCount++;
+        }
+      });
+      const studentExamAvg = studentExamCount > 0 ? Math.round(studentExamSum / studentExamCount) : 0;
+
+      // Submission stats
+      let studentExpectedTasks = 0;
+      let studentSubmittedTasks = 0;
+      assignments.forEach(a => {
+        const sub = a.submissions?.find(s => s.studentId === selectedStudentId);
+        if (sub) {
+          studentExpectedTasks++;
+          if (sub.submitted) {
+            studentSubmittedTasks++;
+          }
+        }
+      });
+      const studentSubmissionRate = studentExpectedTasks > 0
+        ? Math.round((studentSubmittedTasks / studentExpectedTasks) * 100)
+        : 0;
+
+      // Get list of missing tasks
+      const missingTasks = assignments.filter(a => {
+        const sub = a.submissions?.find(s => s.studentId === selectedStudentId);
+        return sub && !sub.submitted;
+      });
+
+      return (
+        <div className="space-y-6">
+          {/* Header Profil Siswa */}
+          <div className="border border-slate-250 p-4 rounded-lg bg-slate-50 flex justify-between items-center">
+            <div>
+              <h3 className="text-xs font-bold text-slate-800 uppercase">Laporan Hasil Belajar Individual</h3>
+              <p className="text-xs text-slate-700 mt-1">Nama: <strong className="text-slate-900">{selectedStudent.name}</strong> (ID: {selectedStudent.id})</p>
+              <p className="text-[10px] text-slate-400 font-mono mt-0.5">Kelas: Fuji Elite Class • Status: {selectedStudent.status === 'Active' ? 'Aktif' : 'Cuti'}</p>
+            </div>
+            <div className="text-right">
+              <span className={`text-[9px] font-bold px-2 py-1 rounded border ${
+                displayQuizAvg >= 75 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-rose-50 text-rose-700 border-rose-200'
+              }`}>
+                {displayQuizAvg >= 75 ? 'KKM TUNTAS (LULUS)' : 'KKM BELUM TUNTAS (REMEDIAL)'}
+              </span>
+            </div>
+          </div>
+
+          {/* KPI Individual */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="border border-slate-200 p-3 rounded-lg bg-white text-center">
+              <span className="text-[9px] uppercase font-bold text-slate-400 block">Rata Presensi Kehadiran</span>
+              <strong className="text-lg text-slate-900 block mt-1">{Math.round(selectedStudent.attendanceRate * 100)}%</strong>
+              <span className={`text-[9px] font-bold block mt-1 ${Math.round(selectedStudent.attendanceRate * 100) >= 95 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                {Math.round(selectedStudent.attendanceRate * 100) >= 95 ? 'Memenuhi Target (≥95%)' : 'Di Bawah Target (<95%)'}
+              </span>
+            </div>
+            <div className="border border-slate-200 p-3 rounded-lg bg-white text-center">
+              <span className="text-[9px] uppercase font-bold text-slate-400 block">Rata-Rata Kuis (Formatif)</span>
+              <strong className="text-lg text-slate-900 block mt-1">{displayQuizAvg} Pts</strong>
+              <span className={`text-[9px] font-bold block mt-1 ${displayQuizAvg >= 75 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                KKM Kelulusan: 75
+              </span>
+            </div>
+            <div className="border border-slate-200 p-3 rounded-lg bg-white text-center">
+              <span className="text-[9px] uppercase font-bold text-slate-400 block">Kepatuhan Penyerahan Tugas</span>
+              <strong className="text-lg text-slate-900 block mt-1">{studentSubmissionRate}%</strong>
+              <span className="text-[9px] text-slate-500 font-semibold block mt-1">Terkumpul {studentSubmittedTasks} dari {studentExpectedTasks} tugas</span>
+            </div>
+          </div>
+
+          {/* Rincian Nilai Komparatif */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase">Rincian Nilai per Materi & Komparasi Kelas</h4>
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-450 uppercase font-bold text-[9px] bg-slate-50">
+                  <th className="py-2 px-3">Nama Materi / Kolom Nilai</th>
+                  <th className="py-2 px-2 text-center w-24">Tipe</th>
+                  <th className="py-2 px-2 text-center w-24">Rata Kelas</th>
+                  <th className="py-2 px-2 text-center w-24">Nilai Trainee</th>
+                  <th className="py-2 px-2 text-center w-28">Status KKM</th>
+                </tr>
+              </thead>
+              <tbody>
+                {grades.map(g => {
+                  const match = g.scores?.find(s => s.studentId === selectedStudentId);
+                  const score = match ? match.score : null;
+
+                  // Class average
+                  let sum = 0;
+                  let count = 0;
+                  g.scores?.forEach(s => {
+                    if (s.score !== null) {
+                      sum += s.score;
+                      count++;
+                    }
+                  });
+                  const classAvg = count > 0 ? Math.round(sum / count) : 0;
+                  const isUnderKKM = score !== null && score < 75;
+
+                  return (
+                    <tr key={g.id} className="border-b border-slate-100">
+                      <td className="py-2 px-3 font-semibold text-slate-855">{g.title}</td>
+                      <td className="py-2 px-2 text-center text-slate-500 font-mono text-[10px]">{g.type}</td>
+                      <td className="py-2 px-2 text-center text-slate-550 font-mono font-medium">{classAvg}</td>
+                      <td className={`py-2 px-2 text-center font-mono font-bold ${
+                        isUnderKKM ? 'text-red-650 bg-red-50/50' : 'text-slate-900'
+                      }`}>
+                        {score !== null ? score : '-'}
+                      </td>
+                      <td className="py-2 px-2 text-center font-bold">
+                        {score === null ? (
+                          <span className="text-slate-400 font-medium italic text-[10px]">Belum Dinilai</span>
+                        ) : score >= 75 ? (
+                          <span className="text-emerald-700 text-[10px]">TUNTAS</span>
+                        ) : (
+                          <span className="text-red-700 text-[10px]">REMEDIAL</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Tugas Tertunda */}
+          <div className="space-y-2">
+            <h4 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase">Daftar Tugas yang Belum Dikumpulkan</h4>
+            {missingTasks.length === 0 ? (
+              <p className="text-xs text-slate-500 italic">Luar biasa! Trainee ini telah mengumpulkan seluruh tugas aktif.</p>
+            ) : (
+              <table className="w-full text-left text-xs border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-slate-400 text-[9px] uppercase font-bold bg-slate-50">
+                    <th className="py-2 px-3">Judul Tugas</th>
+                    <th className="py-2 px-3">Batas Waktu (Deadline)</th>
+                    <th className="py-2 px-3 w-32 text-center">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {missingTasks.map(t => (
+                    <tr key={t.id} className="border-b border-slate-100">
+                      <td className="py-2 px-3 font-semibold text-slate-855">{t.title}</td>
+                      <td className="py-2 px-3 font-mono text-slate-500">{t.dueDate}</td>
+                      <td className="py-2 px-3 text-center">
+                        <span className="text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded">
+                          BELUM KUMPUL
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* KPI Cards */}
+        <div className="grid grid-cols-4 gap-4">
+          <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Siswa</span>
+            <strong className="text-lg text-slate-900 block mt-1">{filteredStudents.length} Orang</strong>
+            <span className="text-[9px] text-slate-500">Aktif: {activeStudents.length} | Cuti: {filteredStudents.filter(s => s.status === 'Leave').length}</span>
+          </div>
+          <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Kehadiran Kelas</span>
+            <strong className="text-lg text-slate-900 block mt-1">{avgAttendance}%</strong>
+            <span className="text-[9px] text-red-500 font-semibold">Min Target: 95%</span>
+          </div>
+          <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Rata Nilai Kuis</span>
+            <strong className="text-lg text-slate-900 block mt-1">{avgQuiz} Poin</strong>
+            <span className="text-[9px] text-slate-500">Dari {quizColumns.length} kuis aktif</span>
+          </div>
+          <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
+            <span className="text-[10px] uppercase font-bold text-slate-400 block">Siswa At-Risk</span>
+            <strong className={`text-lg block mt-1 ${atRiskCount > 0 ? 'text-red-600 font-bold' : 'text-slate-900'}`}>{atRiskCount} Siswa</strong>
+            <span className="text-[9px] text-slate-500">Butuh Bimbingan</span>
+          </div>
+        </div>
+
+        {/* Top Performers Table */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase">Top Performing Trainees</h3>
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 text-slate-400 text-[10px] uppercase font-bold bg-slate-50">
+                <th className="py-2 px-3">Nama Siswa</th>
+                <th className="py-2 px-3">Nomor ID</th>
+                <th className="py-2 px-3 text-center">Rata Nilai Kuis</th>
+                <th className="py-2 px-3 text-center">Rata Presensi</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {topPerformers.map(st => (
+                <tr key={st.id} className="border-b border-slate-100">
+                  <td className="py-2 px-3 font-semibold text-slate-800">{st.name}</td>
+                  <td className="py-2 px-3 font-mono">{st.id}</td>
+                  <td className="py-2 px-3 text-center font-bold text-green-700">{st.quizScore} Pts</td>
+                  <td className="py-2 px-3 text-center font-mono font-semibold">{Math.round(st.attendanceRate * 100)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-      {/* Academic & Assignment Summary */}
-      <div className="grid grid-cols-2 gap-4 mt-4 text-xs">
-        <div className="border border-slate-200 p-3 rounded-lg bg-slate-50/50">
-          <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Rangkuman Kinerja Tugas</h4>
-          <p className="text-slate-700">Tingkat Penyerahan Tugas: <strong className="text-emerald-700">{submissionRate}%</strong></p>
-          <p className="text-[10px] text-slate-500 mt-1">Terisi {totalSubmittedCount} dari {totalExpectedSubmissions} total pengiriman berkas.</p>
-        </div>
-        <div className="border border-slate-200 p-3 rounded-lg bg-slate-50/50">
-          <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Evaluasi Rata-Rata Nilai</h4>
-          <p className="text-slate-700">Rata-Rata Kuis (Formatif): <strong className="text-slate-800 font-mono font-bold">{avgQuiz} Pts</strong></p>
-          <p className="text-slate-700 mt-0.5">Rata-Rata Ujian (Sumatif): <strong className="text-slate-800 font-mono font-bold">{avgExam} Pts</strong></p>
+        {/* Academic & Assignment Summary */}
+        <div className="grid grid-cols-2 gap-4 mt-4 text-xs">
+          <div className="border border-slate-200 p-3 rounded-lg bg-slate-50/50">
+            <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Rangkuman Kinerja Tugas</h4>
+            <p className="text-slate-700">Tingkat Penyerahan Tugas: <strong className="text-emerald-700">{submissionRate}%</strong></p>
+            <p className="text-[10px] text-slate-500 mt-1">Terisi {totalSubmittedCount} dari {totalExpectedSubmissions} total pengiriman berkas.</p>
+          </div>
+          <div className="border border-slate-200 p-3 rounded-lg bg-slate-50/50">
+            <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Evaluasi Rata-Rata Nilai</h4>
+            <p className="text-slate-700">Rata-Rata Kuis (Formatif): <strong className="text-slate-800 font-mono font-bold">{avgQuiz} Pts</strong></p>
+            <p className="text-slate-700 mt-0.5">Rata-Rata Ujian (Sumatif): <strong className="text-slate-800 font-mono font-bold">{avgExam} Pts</strong></p>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderStudentsReport = () => (
     <div className="space-y-3">
