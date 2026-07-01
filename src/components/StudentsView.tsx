@@ -180,7 +180,6 @@ export default function StudentsView({
               <thead>
                 <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[9px] bg-slate-50/50 select-none">
                   <th className="py-3 px-4">Informasi Siswa</th>
-                  <th className="py-3 px-4">Poin Perilaku</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-center w-28">Aksi</th>
                 </tr>
@@ -232,17 +231,6 @@ export default function StudentsView({
                       </td>
 
 
-
-                      {/* Behavior Score Points */}
-                      <td className="py-3 px-4 font-mono font-bold">
-                        <span className={`px-2 py-0.5 rounded-sm font-semibold border ${
-                          st.behaviorScore >= 85 ? 'bg-green-50 text-green-700 border-green-100' :
-                          st.behaviorScore >= 70 ? 'bg-amber-50 text-amber-700 border-amber-100' :
-                          'bg-red-50 text-red-700 border-red-100'
-                        }`}>
-                          {st.behaviorScore} Pts
-                        </span>
-                      </td>
 
                       {/* Status */}
                       <td className="py-3 px-4">
@@ -300,7 +288,7 @@ export default function StudentsView({
                               </button>
                               <button
                                 onClick={() => {
-                                  if (confirm(`Hapus siswa "${st.name}"? Semua log presensi, tugas, dan perilakunya akan ikut terhapus dari sistem.`)) {
+                                  if (confirm(`Hapus siswa "${st.name}"? Semua log presensi dan tugasnya akan ikut terhapus dari sistem.`)) {
                                     onDeleteStudent(st.id);
                                   }
                                 }}

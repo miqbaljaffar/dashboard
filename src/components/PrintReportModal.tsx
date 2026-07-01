@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Student, AttendanceRecord, BehavioralIncidence, BehavioralReward, Assignment, GradeColumn } from '../types';
+import { Student, AttendanceRecord, Assignment, GradeColumn } from '../types';
 import {
   X,
   Printer,
@@ -8,7 +8,6 @@ import {
   Calendar,
   Users,
   Award,
-  ShieldAlert,
   LayoutDashboard
 } from 'lucide-react';
 
@@ -17,8 +16,6 @@ interface PrintReportModalProps {
   onClose: () => void;
   students: Student[];
   attendance: AttendanceRecord[];
-  incidents: BehavioralIncidence[];
-  rewards: BehavioralReward[];
   assignments: Assignment[];
   grades: GradeColumn[];
   initialTab?: string;
@@ -29,8 +26,6 @@ export default function PrintReportModal({
   onClose,
   students,
   attendance,
-  incidents,
-  rewards,
   assignments,
   grades,
   initialTab = 'dashboard'
@@ -60,10 +55,6 @@ export default function PrintReportModal({
       case 'academia':
         setCustomTitle('Laporan Capaian Akademik & Tugas');
         setCustomSubtitle('Rekapitulasi Pengumpulan Tugas dan Nilai Kuis/Ulangan');
-        break;
-      case 'discipline':
-        setCustomTitle('Laporan Catatan Perilaku & Kedisiplinan');
-        setCustomSubtitle('Buku Jurnal Pelanggaran dan Penghargaan Karakter Trainee');
         break;
       default:
         setCustomTitle('Laporan Akademik');
@@ -115,14 +106,37 @@ export default function PrintReportModal({
   });
   const avgQuiz = totalQuizCount ? Math.round(totalQuizScore / totalQuizCount) : 0;
 
-  const cohortIncidents = incidents.filter(i => studentIds.includes(i.studentId));
-  const activeViolationsCount = cohortIncidents.filter(i => i.status === 'Active').length;
+  // For each student, find their average quiz score across all quiz columns
+  const studentQuizAverages = activeStudents.map(student => {
+    let sum = 0;
+    let count = 0;
+    quizColumns.forEach(g => {
+      const match = g.scores?.find(s => s.studentId === student.id);
+      if (match && match.score !== null && match.score !== undefined) {
+        sum += match.score;
+        count++;
+      }
+    });
+    return count ? sum / count : null;
+  });
 
-  const topPerformers = [...activeStudents]
-    .sort((a, b) => (b.behaviorScore + b.attendanceRate * 100) - (a.behaviorScore + a.attendanceRate * 100))
-    .slice(0, 5);
+  const atRiskCount = activeStudents.filter((s, idx) => {
+    const avgQuiz = studentQuizAverages[idx];
+    return s.attendanceRate < 0.82 || (avgQuiz !== null && avgQuiz < 75);
+  }).length;
 
-  const recentAccidents = cohortIncidents.slice(0, 5);
+  const topPerformers = activeStudents
+    .map((student, idx) => {
+      const avg = studentQuizAverages[idx];
+      return { student, avg };
+    })
+    .filter(item => item.avg !== null)
+    .sort((a, b) => (b.avg || 0) - (a.avg || 0))
+    .slice(0, 5)
+    .map(item => ({
+      ...item.student,
+      quizScore: Math.round(item.avg || 0)
+    }));
 
   // Render components inside the Preview and Print View
   const renderDashboardReport = () => (
@@ -145,9 +159,9 @@ export default function PrintReportModal({
           <span className="text-[9px] text-slate-500">Dari {quizColumns.length} kuis aktif</span>
         </div>
         <div className="border border-slate-200 p-3 rounded-lg bg-slate-50">
-          <span className="text-[10px] uppercase font-bold text-slate-400 block">Kasus Kedisiplinan</span>
-          <strong className={`text-lg block mt-1 ${activeViolationsCount > 0 ? 'text-red-600 font-bold' : 'text-slate-900'}`}>{activeViolationsCount} Kasus</strong>
-          <span className="text-[9px] text-slate-500">Berstatus Aktif</span>
+          <span className="text-[10px] uppercase font-bold text-slate-400 block">Siswa At-Risk</span>
+          <strong className={`text-lg block mt-1 ${atRiskCount > 0 ? 'text-red-600 font-bold' : 'text-slate-900'}`}>{atRiskCount} Siswa</strong>
+          <span className="text-[9px] text-slate-500">Butuh Bimbingan</span>
         </div>
       </div>
 
@@ -159,7 +173,7 @@ export default function PrintReportModal({
             <tr className="border-b border-slate-200 text-slate-400 text-[10px] uppercase font-bold bg-slate-50">
               <th className="py-2 px-3">Nama Siswa</th>
               <th className="py-2 px-3">Nomor ID</th>
-              <th className="py-2 px-3 text-center">Poin Perilaku</th>
+              <th className="py-2 px-3 text-center">Rata Nilai Kuis</th>
               <th className="py-2 px-3 text-center">Rata Presensi</th>
             </tr>
           </thead>
@@ -168,46 +182,12 @@ export default function PrintReportModal({
               <tr key={st.id} className="border-b border-slate-100">
                 <td className="py-2 px-3 font-semibold text-slate-800">{st.name}</td>
                 <td className="py-2 px-3 font-mono">{st.id}</td>
-                <td className="py-2 px-3 text-center font-bold text-green-700">{st.behaviorScore} Pts</td>
+                <td className="py-2 px-3 text-center font-bold text-green-700">{st.quizScore} Pts</td>
                 <td className="py-2 px-3 text-center font-mono font-semibold">{Math.round(st.attendanceRate * 100)}%</td>
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
-
-      {/* Recent Incidents Table */}
-      <div className="space-y-2">
-        <h3 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase text-red-700">Pelanggaran Kedisiplinan Terakhir</h3>
-        {recentAccidents.length === 0 ? (
-          <p className="text-xs text-slate-400 italic py-2">Tidak ada catatan pelanggaran aktif dalam sistem.</p>
-        ) : (
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-slate-200 text-slate-400 text-[10px] uppercase font-bold bg-slate-50">
-                <th className="py-2 px-3 w-24">Tanggal</th>
-                <th className="py-2 px-3">Siswa</th>
-                <th className="py-2 px-3">Kategori</th>
-                <th className="py-2 px-3 text-center">Dampak</th>
-                <th className="py-2 px-3">Tindakan / Catatan</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentAccidents.map(ac => (
-                <tr key={ac.id} className="border-b border-slate-100">
-                  <td className="py-2 px-3 font-mono">{ac.date}</td>
-                  <td className="py-2 px-3">
-                    <p className="font-semibold text-slate-800">{ac.studentName}</p>
-                    <span className="text-[10px] text-slate-450 font-mono">{ac.studentId}</span>
-                  </td>
-                  <td className="py-2 px-3 text-red-800 font-medium">{ac.category}</td>
-                  <td className="py-2 px-3 text-center font-bold text-red-600">-{ac.pointsDeducted} Pts</td>
-                  <td className="py-2 px-3 text-slate-600">{ac.actionTaken}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
     </div>
   );
@@ -222,7 +202,6 @@ export default function PrintReportModal({
             <th className="py-2 px-3">Nama Lengkap</th>
             <th className="py-2 px-3 w-16 text-center">Gender</th>
             <th className="py-2 px-3 w-12 text-center">Umur</th>
-            <th className="py-2 px-3 text-center">Poin Perilaku</th>
             <th className="py-2 px-3 text-center">Presensi</th>
             <th className="py-2 px-3 text-center w-20">Status</th>
           </tr>
@@ -235,11 +214,6 @@ export default function PrintReportModal({
               <td className="py-2 px-3 font-bold text-slate-850">{st.name}</td>
               <td className="py-2 px-3 text-center">{st.gender === 'Male' ? 'L' : 'P'}</td>
               <td className="py-2 px-3 text-center font-mono">{st.age} th</td>
-              <td className="py-2 px-3 text-center font-bold">
-                <span className={st.behaviorScore >= 85 ? 'text-green-700' : st.behaviorScore >= 70 ? 'text-amber-700' : 'text-red-700'}>
-                  {st.behaviorScore} Pts
-                </span>
-              </td>
               <td className="py-2 px-3 text-center font-mono font-semibold">{Math.round(st.attendanceRate * 100)}%</td>
               <td className="py-2 px-3 text-center">
                 <span className={`text-[9px] font-bold px-1 py-0.5 rounded border uppercase ${
@@ -408,18 +382,19 @@ export default function PrintReportModal({
                       {activeCohortGrades.map(g => {
                         const scoreObj = g.scores?.find(s => s.studentId === st.id);
                         const score = scoreObj?.score;
+                        const isUnderKKM = score !== undefined && score !== null && score < 75;
                         if (score !== undefined && score !== null) {
                           sum += score;
                           count++;
                         }
 
                         return (
-                          <td key={g.id} className="py-2 px-2 text-center font-mono font-medium">
+                          <td key={g.id} className={`py-2 px-2 text-center font-mono font-medium ${isUnderKKM ? 'text-red-650 font-bold bg-red-50/50' : ''}`}>
                             {score !== undefined && score !== null ? score : '-'}
                           </td>
                         );
                       })}
-                      <td className="py-2 px-2 text-center font-mono font-bold bg-slate-50 text-slate-900">
+                      <td className={`py-2 px-2 text-center font-mono font-bold bg-slate-50 ${count > 0 && Math.round(sum / count) < 75 ? 'text-red-650 font-black bg-red-50/30' : 'text-slate-900'}`}>
                         {count > 0 ? Math.round(sum / count) : '-'}
                       </td>
                     </tr>
@@ -433,82 +408,12 @@ export default function PrintReportModal({
     );
   };
 
-  const renderDisciplineReport = () => {
-    const cohortIncidentsList = incidents.filter(i => studentIds.includes(i.studentId));
-    const cohortRewardsList = rewards.filter(r => studentIds.includes(r.studentId));
-    const sortedStudents = [...filteredStudents].sort((a, b) => a.behaviorScore - b.behaviorScore);
-
-    return (
-      <div className="space-y-6">
-        <div className="grid grid-cols-2 gap-6">
-          {/* Violations ledger */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-slate-850 border-b border-slate-200 pb-1 uppercase text-red-700">Catatan Pelanggaran (Incidents Ledger)</h3>
-            {cohortIncidentsList.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-3">Tidak ada log pelanggaran kedisiplinan.</p>
-            ) : (
-              <div className="space-y-2">
-                {cohortIncidentsList.map(inc => (
-                  <div key={inc.id} className="p-2.5 border border-slate-200 rounded-lg bg-slate-50/50 text-[11px] leading-relaxed">
-                    <div className="flex justify-between font-bold text-slate-800">
-                      <span>{inc.studentName}</span>
-                      <span className="text-red-650 font-mono">-{inc.pointsDeducted} Pts</span>
-                    </div>
-                    <p className="text-slate-500 font-medium text-[10px] mt-0.5">Kat: {inc.category} • Severity: {inc.severity} • {inc.date}</p>
-                    <p className="text-slate-700 mt-1 italic font-medium">"{inc.actionTaken}"</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Merits ledger */}
-          <div className="space-y-2">
-            <h3 className="text-xs font-bold text-slate-850 border-b border-slate-200 pb-1 uppercase text-green-700">Catatan Penghargaan & Prestasi</h3>
-            {cohortRewardsList.length === 0 ? (
-              <p className="text-xs text-slate-400 italic py-3">Belum ada log penghargaan prestasi.</p>
-            ) : (
-              <div className="space-y-2">
-                {cohortRewardsList.map(rew => (
-                  <div key={rew.id} className="p-2.5 border border-slate-200 rounded-lg bg-slate-50/50 text-[11px] leading-relaxed">
-                    <div className="flex justify-between font-bold text-slate-800">
-                      <span>{rew.studentName}</span>
-                      <span className="text-green-700 font-mono">+{rew.pointsAdded} Pts</span>
-                    </div>
-                    <p className="text-slate-500 font-medium text-[10px] mt-0.5">Kat: {rew.category} • {rew.date}</p>
-                    <p className="text-slate-700 mt-1 italic font-medium">"{rew.description}"</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Conduct Rankings */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase">Peringkat Poin Kedisiplinan</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {sortedStudents.map((st, idx) => (
-              <div key={st.id} className="flex justify-between items-center text-xs p-2 bg-slate-50 border border-slate-150 rounded">
-                <span className="font-semibold text-slate-700">#{idx + 1} {st.name}</span>
-                <span className={`font-mono font-bold ${st.behaviorScore >= 85 ? 'text-green-700' : st.behaviorScore >= 70 ? 'text-amber-700' : 'text-red-700'}`}>
-                  {st.behaviorScore} Pts
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const renderActiveReport = () => {
     switch (reportType) {
       case 'dashboard': return renderDashboardReport();
       case 'students': return renderStudentsReport();
       case 'attendance': return renderAttendanceReport();
       case 'academia': return renderAcademiaReport();
-      case 'discipline': return renderDisciplineReport();
       default: return null;
     }
   };
@@ -552,8 +457,7 @@ export default function PrintReportModal({
                     { id: 'dashboard', label: 'Ringkasan Dashboard', icon: LayoutDashboard },
                     { id: 'students', label: 'Direktori Data Siswa', icon: Users },
                     { id: 'attendance', label: 'Rekap Presensi & Kehadiran', icon: Calendar },
-                    { id: 'academia', label: 'Tugas & Nilai Akademik', icon: Award },
-                    { id: 'discipline', label: 'Kedisiplinan & Perilaku', icon: ShieldAlert }
+                    { id: 'academia', label: 'Tugas & Nilai Akademik', icon: Award }
                   ].map(tab => {
                     const Icon = tab.icon;
                     return (

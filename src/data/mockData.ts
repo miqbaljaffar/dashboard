@@ -1,4 +1,4 @@
-import { Student, AttendanceRecord, BehavioralIncidence, BehavioralReward } from '../types';
+import { Student, AttendanceRecord } from '../types';
 
 export const initialStudents: Student[] = [
   {
@@ -394,7 +394,3 @@ export const initialStudents: Student[] = [
 ];
 
 export const initialAttendance: AttendanceRecord[] = [];
-
-export const initialIncidences: BehavioralIncidence[] = [];
-
-export const initialRewards: BehavioralReward[] = [];

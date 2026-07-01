@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Student, AttendanceRecord, BehavioralIncidence, BehavioralReward, Assignment, GradeColumn } from './types';
-import { initialStudents, initialAttendance, initialIncidences, initialRewards } from './data/mockData';
+import { Student, AttendanceRecord, Assignment, GradeColumn } from './types';
+import { initialStudents, initialAttendance } from './data/mockData';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
 import AttendanceView from './components/AttendanceView';
 import AcademiaView from './components/AcademiaView';
-import DisciplineView from './components/DisciplineView';
 import StudentsView from './components/StudentsView';
 import { GraduationCap, Printer, LogOut } from 'lucide-react';
 import PrintReportModal from './components/PrintReportModal';
@@ -32,8 +31,6 @@ export default function App() {
   // Business entities lists states
   const [studentsState, setStudentsState] = useState<Student[]>(initialStudents);
   const [attendanceState, setAttendanceState] = useState<AttendanceRecord[]>(initialAttendance);
-  const [incidentsState, setIncidentsState] = useState<BehavioralIncidence[]>(initialIncidences);
-  const [rewardsState, setRewardsState] = useState<BehavioralReward[]>(initialRewards);
   
   // Dynamic Academic States
   const [assignmentsState, setAssignmentsState] = useState<Assignment[]>([]);
@@ -48,8 +45,6 @@ export default function App() {
         const data = await res.json();
         setStudentsState(data.students);
         setAttendanceState(data.attendance);
-        setIncidentsState(data.incidents);
-        setRewardsState(data.rewards);
         setAssignmentsState(data.assignments || []);
         setGradesState(data.quizzes || []); // backend maps grades to quizzes key
       } catch (err) {
@@ -84,8 +79,6 @@ export default function App() {
       .then(() => {
         setStudentsState(prev => prev.filter(s => s.id !== id));
         setAttendanceState(prev => prev.filter(a => a.studentId !== id));
-        setIncidentsState(prev => prev.filter(i => i.studentId !== id));
-        setRewardsState(prev => prev.filter(r => r.studentId !== id));
       })
       .catch(err => console.error('Failed to sync student delete to DB:', err));
   };
@@ -241,112 +234,11 @@ export default function App() {
     }).catch(err => console.error('Failed to update score:', err));
   };
 
-  // Behavior logs CRUD handlers
-  const handleLogIncident = (inc: BehavioralIncidence) => {
-    setIncidentsState(prev => [inc, ...prev]);
-
-    fetch('/api/incidents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(inc),
-    })
-      .then(res => {
-        if (res.ok) return res.json();
-      })
-      .then(data => {
-        if (data && data.student) {
-          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
-        }
-      })
-      .catch(err => console.error('Failed to sync incident:', err));
-  };
-
-  const handleUpdateIncident = (id: string, incidentData: Partial<BehavioralIncidence>) => {
-    fetch(`/api/incidents/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(incidentData)
-    })
-      .then(res => res.json())
-      .then(data => {
-        setIncidentsState(prev => prev.map(inc => inc.id === id ? data.incident : inc));
-        if (data.student) {
-          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
-        }
-      })
-      .catch(err => console.error('Failed to update incident:', err));
-  };
-
-  const handleDeleteIncident = (id: string) => {
-    fetch(`/api/incidents/${id}`, {
-      method: 'DELETE'
-    })
-      .then(res => res.json())
-      .then(data => {
-        setIncidentsState(prev => prev.filter(inc => inc.id !== id));
-        if (data.student) {
-          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
-        }
-      })
-      .catch(err => console.error('Failed to delete incident:', err));
-  };
-
-  const handleLogReward = (rew: BehavioralReward) => {
-    setRewardsState(prev => [rew, ...prev]);
-
-    fetch('/api/rewards', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rew),
-    })
-      .then(res => {
-        if (res.ok) return res.json();
-      })
-      .then(data => {
-        if (data && data.student) {
-          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
-        }
-      })
-      .catch(err => console.error('Failed to sync reward:', err));
-  };
-
-  const handleUpdateReward = (id: string, rewardData: Partial<BehavioralReward>) => {
-    fetch(`/api/rewards/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(rewardData)
-    })
-      .then(res => res.json())
-      .then(data => {
-        setRewardsState(prev => prev.map(rew => rew.id === id ? data.reward : rew));
-        if (data.student) {
-          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
-        }
-      })
-      .catch(err => console.error('Failed to update reward:', err));
-  };
-
-  const handleDeleteReward = (id: string) => {
-    fetch(`/api/rewards/${id}`, {
-      method: 'DELETE'
-    })
-      .then(res => res.json())
-      .then(data => {
-        setRewardsState(prev => prev.filter(rew => rew.id !== id));
-        if (data.student) {
-          setStudentsState(prev => prev.map(s => s.id === data.student.id ? data.student : s));
-        }
-      })
-      .catch(err => console.error('Failed to delete reward:', err));
-  };
-
   // Helper count badges
   const atRiskStudentsCount = studentsState.filter(s => 
     s.status === 'Active' && 
-    (s.attendanceRate < 0.82 || s.behaviorScore < 70)
+    s.attendanceRate < 0.82
   ).length;
-
-  const activeViolationsCount = incidentsState.filter(i => i.status === 'Active').length;
 
   // Render correct nested operational panel
   const renderTabContent = () => {
@@ -356,7 +248,6 @@ export default function App() {
           <DashboardView
             students={studentsState}
             attendance={attendanceState}
-            incidents={incidentsState}
             assignments={assignmentsState}
             grades={gradesState}
             onNavigate={(id) => setActiveTab(id)}
@@ -397,22 +288,6 @@ export default function App() {
             onDeleteGradeColumn={handleDeleteGradeColumn}
             onUpdateStudentGrade={handleUpdateStudentGrade}
             onPrintClick={() => handleOpenPrint('academia')}
-          />
-        );
-      case 'discipline':
-        return (
-          <DisciplineView
-            students={studentsState}
-            incidents={incidentsState}
-            rewards={rewardsState}
-            onLogIncident={handleLogIncident}
-            onUpdateIncident={handleUpdateIncident}
-            onDeleteIncident={handleDeleteIncident}
-            onLogReward={handleLogReward}
-            onUpdateReward={handleUpdateReward}
-            onDeleteReward={handleDeleteReward}
-            role="ADMIN"
-            onPrintClick={() => handleOpenPrint('discipline')}
           />
         );
       default:
@@ -496,7 +371,6 @@ export default function App() {
           <Sidebar
             activeTab={activeTab}
             setActiveTab={setActiveTab}
-            totalViolationsCount={activeViolationsCount}
             onLogout={handleLogout}
           />
 
@@ -514,8 +388,6 @@ export default function App() {
         onClose={() => setIsPrintModalOpen(false)}
         students={studentsState}
         attendance={attendanceState}
-        incidents={incidentsState}
-        rewards={rewardsState}
         assignments={assignmentsState}
         grades={gradesState}
         initialTab={printTabOverride || activeTab}

@@ -56,25 +56,3 @@ export interface StudentGrade {
   studentId: string;
   score: number | null;
 }
-
-export interface BehavioralIncidence {
-  id: string;
-  studentId: string;
-  studentName: string;
-  date: string;
-  category: 'Late Wake Up' | 'Late Attendance' | 'Missing Prayer' | 'Room Not Clean' | 'Curfew Violation' | 'Missing Assignment' | 'Improper Conduct';
-  severity: 'Low' | 'Medium' | 'High';
-  pointsDeducted: number;
-  status: 'Active' | 'Resolved' | 'Escalated';
-  actionTaken: string;
-}
-
-export interface BehavioralReward {
-  id: string;
-  studentId: string;
-  studentName: string;
-  date: string;
-  category: 'Perfect Attendance' | 'Excellent Academic Performance' | 'Leadership' | 'Cleanliness';
-  pointsAdded: number;
-  description: string;
-}

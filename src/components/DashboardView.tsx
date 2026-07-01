@@ -1,10 +1,9 @@
 import React from 'react';
-import { Student, AttendanceRecord, BehavioralIncidence, Assignment, GradeColumn } from '../types';
+import { Student, AttendanceRecord, Assignment, GradeColumn } from '../types';
 import {
   Users,
   Clock,
   BookOpen,
-  Award,
   AlertTriangle,
   CheckCircle2,
   ChevronRight,
@@ -22,15 +21,12 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  Cell,
-  PieChart,
-  Pie
+  Cell
 } from 'recharts';
 
 interface DashboardViewProps {
   students: Student[];
   attendance: AttendanceRecord[];
-  incidents: BehavioralIncidence[];
   assignments: Assignment[];
   grades: GradeColumn[];
   onNavigate: (tab: string) => void;
@@ -40,7 +36,6 @@ interface DashboardViewProps {
 export default function DashboardView({
   students,
   attendance,
-  incidents,
   assignments,
   grades,
   onNavigate,
@@ -99,12 +94,11 @@ export default function DashboardView({
     return count ? sum / count : null;
   });
 
-  // Students at Risk (attendance < 82%, quiz score average < 70, or behavior score < 70)
+  // Students at Risk (attendance < 82% or quiz score average < 75)
   const atRiskStudents = activeStudents.filter((s, idx) => {
     const avgQuiz = studentQuizAverages[idx];
     return s.attendanceRate < 0.82 || 
-           (avgQuiz !== null && avgQuiz < 70) ||
-           s.behaviorScore < 70;
+           (avgQuiz !== null && avgQuiz < 75);
   });
   const atRiskCount = atRiskStudents.length;
 
@@ -181,28 +175,21 @@ export default function DashboardView({
     { range: 'Belum Dinilai', students: studentQuizAverages.filter(avg => avg === null).length }
   ];
 
-  // Chart 3: Student Risk Distribution (Pie Chart)
-  const riskDistData = [
-    { name: 'Healthy (>=85)', value: activeStudents.filter(s => s.behaviorScore >= 85).length, color: '#16A34A' },
-    { name: 'Warning (70-84)', value: activeStudents.filter(s => s.behaviorScore >= 70 && s.behaviorScore < 85).length, color: '#D97706' },
-    { name: 'Critical (<70)', value: activeStudents.filter(s => s.behaviorScore < 70).length, color: '#DC2626' }
-  ];
+  // riskDistData removed because behavior score chart is removed
 
-  // Lists: Top performing students by behavior and quiz combined
+  // Lists: Top performing students by quiz average
   const topPerformers = activeStudents
     .map((student, idx) => {
       const avg = studentQuizAverages[idx];
       return { student, avg };
     })
     .filter(item => item.avg !== null)
-    .sort((a, b) => ((b.avg || 0) + b.student.behaviorScore) - ((a.avg || 0) + a.student.behaviorScore))
+    .sort((a, b) => (b.avg || 0) - (a.avg || 0))
     .slice(0, 4)
     .map(item => ({
       ...item.student,
       quizScore: Math.round(item.avg || 0)
     }));
-
-  const recentAccidents = incidents.slice(0, 4);
 
   return (
     <div className="space-y-6">
@@ -303,7 +290,7 @@ export default function DashboardView({
           <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Recharts Real-time Data</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="dashboard-charts-layout">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id="dashboard-charts-layout">
           
           {/* Chart 1: Attendance Trend */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
@@ -349,47 +336,18 @@ export default function DashboardView({
             </div>
           </div>
 
-          {/* Chart 3: Student Behavior Status */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-            <div className="mb-3">
-              <h4 className="text-xs font-bold text-slate-800">3. Tingkat Kepatuhan & Perilaku</h4>
-              <p className="text-[10px] text-slate-400">Status siswa aktif berdasarkan poin kedisiplinan</p>
-            </div>
-            <div className="h-52 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={riskDistData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {riskDistData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ fontSize: 11 }} />
-                  <Legend wrapperStyle={{ fontSize: 9 }} align="center" layout="horizontal" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
         </div>
       </div>
 
       {/* SYSTEM WIDGETS DECK */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-2">
+      <div className="grid grid-cols-1 gap-6 pt-2">
         
         {/* Widget 1: Top Performing Students Block */}
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
           <div>
             <div className="mb-3">
-              <h4 className="text-xs font-bold text-slate-800">4. Honor Roll: Siswa Berprestasi Terbaik</h4>
-              <p className="text-[10px] text-slate-400">Diurutkan berdasarkan nilai kuis rata-rata dan poin perilaku</p>
+              <h4 className="text-xs font-bold text-slate-800">3. Honor Roll: Siswa Berprestasi Terbaik</h4>
+              <p className="text-[10px] text-slate-400">Diurutkan berdasarkan nilai kuis rata-rata</p>
             </div>
             <div className="space-y-2.5 mt-2">
               {topPerformers.length === 0 ? (
@@ -403,9 +361,6 @@ export default function DashboardView({
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="font-bold text-green-700 font-mono">Kuis Avg: {student.quizScore}</span>
-                      <span className="text-[10px] bg-green-50 text-green-700 border border-green-100 px-1.5 py-0.5 rounded font-mono font-bold">
-                        {student.behaviorScore} pts
-                      </span>
                     </div>
                   </div>
                 ))
@@ -417,46 +372,6 @@ export default function DashboardView({
             className="mt-4 text-center text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 cursor-pointer"
           >
             Buka Lembar Tugas & Nilai <ChevronRight className="h-3 w-3" />
-          </button>
-        </div>
-
-        {/* Widget 2: Recent Behavioral Violations */}
-        <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between">
-          <div>
-            <h3 className="text-xs font-bold text-slate-850 border-b border-slate-100 pb-2 flex items-center justify-between">
-              <span>5. Pelanggaran Kedisiplinan Terakhir</span>
-              <span className="text-[10px] text-red-500 font-bold">Aktif: {recentAccidents.filter(a => a.status === 'Active').length}</span>
-            </h3>
-            <div className="space-y-2 mt-3">
-              {recentAccidents.length === 0 ? (
-                <p className="text-xs text-slate-400 text-center py-6">Bersih dari pelanggaran kedisiplinan.</p>
-              ) : (
-                recentAccidents.map((ac) => (
-                  <div key={ac.id} className="text-xs p-2.5 border border-slate-100 rounded-lg flex gap-2 items-start justify-between bg-slate-50/50">
-                    <div>
-                      <div className="flex gap-2 items-center">
-                        <strong className="text-slate-800">{ac.studentName}</strong>
-                        <span className="text-[9px] text-slate-400 font-mono">{ac.id}</span>
-                      </div>
-                      <p className="text-[10px] text-slate-500 mt-1">
-                        Kategori: <span className="font-semibold text-slate-700">{ac.category}</span> - Tindakan: <span className="text-red-700 font-medium">{ac.actionTaken}</span>
-                      </p>
-                    </div>
-                    <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                      ac.severity === 'High' ? 'bg-red-50 text-red-700' : 'bg-amber-50 text-amber-700'
-                    }`}>
-                      {ac.severity}
-                    </span>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-          <button 
-            onClick={() => onNavigate('discipline')}
-            className="w-full mt-4 text-center text-[10px] font-bold text-blue-600 hover:text-blue-700 block cursor-pointer"
-          >
-            Buka Panel Kedisiplinan & Perilaku
           </button>
         </div>
 

@@ -4,7 +4,6 @@ import {
   Users,
   CalendarCheck,
   BookOpen,
-  ShieldAlert,
   GraduationCap,
   LogOut
 } from 'lucide-react';
@@ -12,14 +11,12 @@ import {
 interface SidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  totalViolationsCount: number;
   onLogout?: () => void;
 }
 
 export default function Sidebar({
   activeTab,
   setActiveTab,
-  totalViolationsCount,
   onLogout
 }: SidebarProps) {
   
@@ -27,8 +24,7 @@ export default function Sidebar({
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
     { id: 'students', label: 'Data Siswa', icon: Users },
     { id: 'attendance', label: 'Kehadiran (Attendance)', icon: CalendarCheck },
-    { id: 'academia', label: 'Tugas & Nilai', icon: BookOpen },
-    { id: 'discipline', label: 'Kedisiplinan & Perilaku', icon: ShieldAlert, badge: totalViolationsCount }
+    { id: 'academia', label: 'Tugas & Nilai', icon: BookOpen }
   ];
 
   return (
@@ -74,14 +70,6 @@ export default function Sidebar({
                 <Icon className={`h-4 w-4 shrink-0 transition-transform ${isActive ? 'text-blue-600' : 'text-slate-400 group-hover:text-slate-500'}`} />
                 <span className={isActive ? 'font-semibold' : ''}>{item.label}</span>
               </div>
-              
-              {item.badge && item.badge > 0 ? (
-                <span className={`inline-flex items-center justify-center h-4 min-w-4 px-1.5 text-[9px] font-semibold rounded-full ${
-                  isActive ? 'bg-blue-100 text-blue-800' : 'bg-red-50 text-red-700 border border-red-100'
-                }`}>
-                  {item.badge}
-                </span>
-              ) : null}
             </button>
           );
         })}

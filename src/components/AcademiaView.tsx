@@ -546,6 +546,7 @@ export default function AcademiaView({
                       {students.filter(s => s.status === 'Active').map(student => {
                         const scoreObj = activeGradeCol.scores?.find(s => s.studentId === student.id);
                         const displayVal = scoreObj ? (localScores[scoreObj.id] ?? '') : '';
+                        const parsedScore = displayVal === '' ? null : parseFloat(displayVal.replace(',', '.'));
 
                         return (
                           <tr key={student.id} className="hover:bg-slate-55/20 transition-colors">
@@ -560,13 +561,28 @@ export default function AcademiaView({
                                     type="text"
                                     inputMode="numeric"
                                     placeholder="-"
-                                    className="w-16 text-center py-1 bg-slate-50 border border-slate-200 rounded-md font-semibold font-mono text-slate-800 focus:outline-hidden focus:border-blue-500 focus:bg-white transition-colors"
+                                    className={`w-16 text-center py-1 border rounded-md font-semibold font-mono transition-colors focus:outline-hidden focus:bg-white ${
+                                      parsedScore !== null && !isNaN(parsedScore)
+                                        ? parsedScore >= 75
+                                          ? 'bg-emerald-50/20 border-emerald-300 text-emerald-800 focus:border-emerald-500'
+                                          : 'bg-rose-50/20 border-rose-300 text-rose-800 focus:border-rose-500'
+                                        : 'bg-slate-50 border-slate-200 text-slate-800 focus:border-blue-500'
+                                    }`}
                                     value={displayVal}
                                     onChange={(e) => handleScoreChange(scoreObj.id, e.target.value)}
                                     onBlur={() => handleScoreBlur(scoreObj.id, scoreObj.score, activeGradeCol.id)}
                                     onKeyDown={(e) => handleScoreKeyDown(e, scoreObj.id, scoreObj.score, activeGradeCol.id)}
                                   />
                                   <span className="text-[10px] font-bold text-slate-400 font-mono">/100</span>
+                                  {parsedScore !== null && !isNaN(parsedScore) && (
+                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-extrabold border transition-all ${
+                                      parsedScore >= 75
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-250'
+                                        : 'bg-rose-50 text-rose-700 border-rose-250'
+                                    }`}>
+                                      {parsedScore >= 75 ? 'LULUS' : 'REMEDIAL'}
+                                    </span>
+                                  )}
                                   {displayVal !== (scoreObj.score !== null ? String(scoreObj.score) : '') && (
                                     <button
                                       onMouseDown={(e) => {
