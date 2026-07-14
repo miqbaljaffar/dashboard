@@ -168,11 +168,14 @@ export default function DashboardView({
         attendanceByDate[dateStr] = { present: 0, total: 0 };
       }
       
-      let presentCount = 0;
-      if (record.morning === 'Present') presentCount++;
-      if (record.classSession === 'Present') presentCount++;
+      let presentWeight = 0;
+      if (record.morning === 'Present') presentWeight += 1.0;
+      else if (record.morning === 'Late') presentWeight += 0.5;
+
+      if (record.classSession === 'Present') presentWeight += 1.0;
+      else if (record.classSession === 'Late') presentWeight += 0.5;
       
-      attendanceByDate[dateStr].present += presentCount;
+      attendanceByDate[dateStr].present += presentWeight;
       attendanceByDate[dateStr].total += 2;
     });
 
