@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Student, AttendanceRecord, Assignment, GradeColumn } from '../types';
+import { Student, AttendanceRecord, GradeColumn } from '../types';
 import {
   X,
   Printer,
@@ -16,7 +16,6 @@ interface PrintReportModalProps {
   onClose: () => void;
   students: Student[];
   attendance: AttendanceRecord[];
-  assignments: Assignment[];
   grades: GradeColumn[];
   initialTab?: string;
   selectedStudentId?: string;
@@ -27,7 +26,6 @@ export default function PrintReportModal({
   onClose,
   students,
   attendance,
-  assignments,
   grades,
   initialTab = 'dashboard',
   selectedStudentId = 'all'
@@ -55,8 +53,8 @@ export default function PrintReportModal({
         setCustomSubtitle(`Laporan Kehadiran Kelas Harian - Tanggal ${selectedDate}`);
         break;
       case 'academia':
-        setCustomTitle('Laporan Capaian Akademik & Tugas');
-        setCustomSubtitle('Rekapitulasi Pengumpulan Tugas dan Nilai Kuis/Ulangan');
+        setCustomTitle('Laporan Capaian Akademik');
+        setCustomSubtitle('Rekapitulasi Nilai Kuis dan Ulangan');
         break;
       default:
         setCustomTitle('Laporan Akademik');
@@ -140,22 +138,7 @@ export default function PrintReportModal({
     return s.attendanceRate < 0.82 || (avgQuiz !== null && avgQuiz < 75);
   }).length;
 
-  // Assignment submissions calculations
-  let totalExpectedSubmissions = 0;
-  let totalSubmittedCount = 0;
-  assignments.forEach(a => {
-    a.submissions?.forEach(sub => {
-      if (studentIds.includes(sub.studentId)) {
-        totalExpectedSubmissions++;
-        if (sub.submitted) {
-          totalSubmittedCount++;
-        }
-      }
-    });
-  });
-  const submissionRate = totalExpectedSubmissions > 0
-    ? Math.round((totalSubmittedCount / totalExpectedSubmissions) * 100)
-    : 0;
+
 
   const topPerformers = activeStudents
     .map((student, idx) => {
@@ -193,27 +176,7 @@ export default function PrintReportModal({
       });
       const studentExamAvg = studentExamCount > 0 ? Math.round(studentExamSum / studentExamCount) : 0;
 
-      // Submission stats
-      let studentExpectedTasks = 0;
-      let studentSubmittedTasks = 0;
-      assignments.forEach(a => {
-        const sub = a.submissions?.find(s => s.studentId === selectedStudentId);
-        if (sub) {
-          studentExpectedTasks++;
-          if (sub.submitted) {
-            studentSubmittedTasks++;
-          }
-        }
-      });
-      const studentSubmissionRate = studentExpectedTasks > 0
-        ? Math.round((studentSubmittedTasks / studentExpectedTasks) * 100)
-        : 0;
 
-      // Get list of missing tasks
-      const missingTasks = assignments.filter(a => {
-        const sub = a.submissions?.find(s => s.studentId === selectedStudentId);
-        return sub && !sub.submitted;
-      });
 
       return (
         <div className="space-y-6">
@@ -250,9 +213,9 @@ export default function PrintReportModal({
               </span>
             </div>
             <div className="border border-slate-200 p-3 rounded-lg bg-white text-center">
-              <span className="text-[9px] uppercase font-bold text-slate-400 block">Kepatuhan Penyerahan Tugas</span>
-              <strong className="text-lg text-slate-900 block mt-1">{studentSubmissionRate}%</strong>
-              <span className="text-[9px] text-slate-500 font-semibold block mt-1">Terkumpul {studentSubmittedTasks} dari {studentExpectedTasks} tugas</span>
+              <span className="text-[9px] uppercase font-bold text-slate-400 block">Skor Perilaku (Behavior Score)</span>
+              <strong className="text-lg text-slate-900 block mt-1">{selectedStudent.behaviorScore} Pts</strong>
+              <span className="text-[9px] text-slate-500 font-semibold block mt-1">Pelanggaran: {selectedStudent.violationsCount} kasus</span>
             </div>
           </div>
 
@@ -311,37 +274,6 @@ export default function PrintReportModal({
               </tbody>
             </table>
           </div>
-
-          {/* Tugas Tertunda */}
-          <div className="space-y-2">
-            <h4 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase">Daftar Tugas yang Belum Dikumpulkan</h4>
-            {missingTasks.length === 0 ? (
-              <p className="text-xs text-slate-500 italic">Luar biasa! Trainee ini telah mengumpulkan seluruh tugas aktif.</p>
-            ) : (
-              <table className="w-full text-left text-xs border-collapse">
-                <thead>
-                  <tr className="border-b border-slate-200 text-slate-400 text-[9px] uppercase font-bold bg-slate-50">
-                    <th className="py-2 px-3">Judul Tugas</th>
-                    <th className="py-2 px-3">Batas Waktu (Deadline)</th>
-                    <th className="py-2 px-3 w-32 text-center">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {missingTasks.map(t => (
-                    <tr key={t.id} className="border-b border-slate-100">
-                      <td className="py-2 px-3 font-semibold text-slate-855">{t.title}</td>
-                      <td className="py-2 px-3 font-mono text-slate-500">{t.dueDate}</td>
-                      <td className="py-2 px-3 text-center">
-                        <span className="text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded">
-                          BELUM KUMPUL
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </div>
         </div>
       );
     }
@@ -397,12 +329,12 @@ export default function PrintReportModal({
           </table>
         </div>
 
-        {/* Academic & Assignment Summary */}
+        {/* Academic & Discipline Summary */}
         <div className="grid grid-cols-2 gap-4 mt-4 text-xs">
           <div className="border border-slate-200 p-3 rounded-lg bg-slate-50/50">
-            <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Rangkuman Kinerja Tugas</h4>
-            <p className="text-slate-700">Tingkat Penyerahan Tugas: <strong className="text-emerald-700">{submissionRate}%</strong></p>
-            <p className="text-[10px] text-slate-500 mt-1">Terisi {totalSubmittedCount} dari {totalExpectedSubmissions} total pengiriman berkas.</p>
+            <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Rangkuman Kedisiplinan & Perilaku</h4>
+            <p className="text-slate-700">Rata-Rata Perilaku: <strong className="text-emerald-700">{activeStudents.length ? Math.round(activeStudents.reduce((acc, s) => acc + s.behaviorScore, 0) / activeStudents.length) : 0} Pts</strong></p>
+            <p className="text-[10px] text-slate-500 mt-1">Total pelanggaran: {activeStudents.reduce((acc, s) => acc + s.violationsCount, 0)} kasus tercatat.</p>
           </div>
           <div className="border border-slate-200 p-3 rounded-lg bg-slate-50/50">
             <h4 className="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Evaluasi Rata-Rata Nilai</h4>
@@ -526,52 +458,10 @@ export default function PrintReportModal({
 
   const renderAcademiaReport = () => {
     const activeCohortStudents = students.filter(s => s.status === 'Active');
-    const activeCohortAssignments = assignments;
     const activeCohortGrades = grades;
 
     return (
       <div className="space-y-6">
-        {/* Assignments Section */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase">Rekapitulasi Pengumpulan Tugas</h3>
-          {activeCohortAssignments.length === 0 ? (
-            <p className="text-xs text-slate-400 italic py-2">Belum ada kolom tugas yang tercatat.</p>
-          ) : (
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-400 text-[10px] uppercase font-bold bg-slate-50">
-                  <th className="py-2 px-2 w-8 text-center">No</th>
-                  <th className="py-2 px-3">Nama Siswa</th>
-                  {activeCohortAssignments.map(a => (
-                    <th key={a.id} className="py-2 px-2 text-center text-[9px] w-24 truncate" title={a.title}>
-                      {a.title.length > 15 ? a.title.slice(0, 12) + '...' : a.title}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {activeCohortStudents.map((st, i) => (
-                  <tr key={st.id} className="border-b border-slate-100">
-                    <td className="py-2 px-2 text-center font-mono text-slate-400">{i + 1}</td>
-                    <td className="py-2 px-3 font-semibold text-slate-800">{st.name}</td>
-                    {activeCohortAssignments.map(a => {
-                      const sub = a.submissions?.find(s => s.studentId === st.id);
-                      const isSub = sub?.submitted;
-                      return (
-                        <td key={a.id} className="py-2 px-2 text-center">
-                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold ${isSub ? 'text-green-700 bg-green-50' : 'text-red-700 bg-red-50'}`}>
-                            {isSub ? 'Kumpul' : 'Belum'}
-                          </span>
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </div>
-
         {/* Grades Section */}
         <div className="space-y-2">
           <h3 className="text-xs font-bold text-slate-800 border-b border-slate-200 pb-1 uppercase">Rekapitulasi Nilai Ujian & Kuis</h3>
@@ -679,7 +569,7 @@ export default function PrintReportModal({
                     { id: 'dashboard', label: 'Ringkasan Dashboard', icon: LayoutDashboard },
                     { id: 'students', label: 'Direktori Data Siswa', icon: Users },
                     { id: 'attendance', label: 'Rekap Presensi & Kehadiran', icon: Calendar },
-                    { id: 'academia', label: 'Tugas & Nilai Akademik', icon: Award }
+                    { id: 'academia', label: 'Nilai Akademik', icon: Award }
                   ].map(tab => {
                     const Icon = tab.icon;
                     return (

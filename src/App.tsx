@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Student, AttendanceRecord, Assignment, GradeColumn } from './types';
+import { Student, AttendanceRecord, GradeColumn } from './types';
 import { initialStudents, initialAttendance } from './data/mockData';
 import Sidebar from './components/Sidebar';
 import DashboardView from './components/DashboardView';
@@ -35,8 +35,7 @@ export default function App() {
   // Sort alphabetically by name
   const sortedStudents = [...studentsState].sort((a, b) => a.name.localeCompare(b.name));
   
-  // Dynamic Academic States
-  const [assignmentsState, setAssignmentsState] = useState<Assignment[]>([]);
+
   const [gradesState, setGradesState] = useState<GradeColumn[]>([]);
 
   // Focus Analysis State (Collective vs Individual)
@@ -51,7 +50,6 @@ export default function App() {
         const data = await res.json();
         setStudentsState(data.students);
         setAttendanceState(data.attendance);
-        setAssignmentsState(data.assignments || []);
         setGradesState(data.quizzes || []); // backend maps grades to quizzes key
       } catch (err) {
         console.warn('Backend server not reachable, using offline mock data:', err);
@@ -128,61 +126,7 @@ export default function App() {
       });
   };
 
-  // Dynamic Assignments CRUD handlers
-  const handleCreateAssignment = (title: string, dueDate: string) => {
-    fetch('/api/assignments', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, dueDate })
-    })
-      .then(res => res.json())
-      .then(newAss => {
-        setAssignmentsState(prev => [...prev, newAss]);
-      })
-      .catch(err => console.error('Failed to create assignment:', err));
-  };
 
-  const handleUpdateAssignment = (id: string, title: string, dueDate: string) => {
-    fetch(`/api/assignments/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, dueDate })
-    })
-      .then(res => res.json())
-      .then(updated => {
-        setAssignmentsState(prev => prev.map(a => a.id === id ? updated : a));
-      })
-      .catch(err => console.error('Failed to update assignment:', err));
-  };
-
-  const handleDeleteAssignment = (id: string) => {
-    fetch(`/api/assignments/${id}`, {
-      method: 'DELETE'
-    })
-      .then(() => {
-        setAssignmentsState(prev => prev.filter(a => a.id !== id));
-      })
-      .catch(err => console.error('Failed to delete assignment:', err));
-  };
-
-  const handleToggleSubmission = (submissionId: string, assignmentId: string, submitted: boolean) => {
-    // Optimistic UI toggle
-    setAssignmentsState(prev => prev.map(a => {
-      if (a.id === assignmentId && a.submissions) {
-        return {
-          ...a,
-          submissions: a.submissions.map(sub => sub.id === submissionId ? { ...sub, submitted } : sub)
-        };
-      }
-      return a;
-    }));
-
-    fetch(`/api/submissions/${submissionId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ submitted })
-    }).catch(err => console.error('Failed to toggle submission:', err));
-  };
 
   // Dynamic Grade Columns CRUD handlers
   const handleCreateGradeColumn = (title: string, type: 'Kuis' | 'Ulangan', date: string) => {
@@ -254,7 +198,6 @@ export default function App() {
           <DashboardView
             students={sortedStudents}
             attendance={attendanceState}
-            assignments={assignmentsState}
             grades={gradesState}
             selectedStudentId={selectedStudentId}
             onSelectedStudentChange={setSelectedStudentId}
@@ -285,12 +228,7 @@ export default function App() {
         return (
           <AcademiaView
             students={sortedStudents}
-            assignments={assignmentsState}
             grades={gradesState}
-            onCreateAssignment={handleCreateAssignment}
-            onUpdateAssignment={handleUpdateAssignment}
-            onDeleteAssignment={handleDeleteAssignment}
-            onToggleSubmission={handleToggleSubmission}
             onCreateGradeColumn={handleCreateGradeColumn}
             onUpdateGradeColumn={handleUpdateGradeColumn}
             onDeleteGradeColumn={handleDeleteGradeColumn}
@@ -396,7 +334,6 @@ export default function App() {
         onClose={() => setIsPrintModalOpen(false)}
         students={sortedStudents}
         attendance={attendanceState}
-        assignments={assignmentsState}
         grades={gradesState}
         initialTab={printTabOverride || activeTab}
         selectedStudentId={selectedStudentId}

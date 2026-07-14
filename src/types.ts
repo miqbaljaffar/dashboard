@@ -28,20 +28,6 @@ export interface AttendanceRecord {
   notes?: string;
 }
 
-export interface Assignment {
-  id: string;
-  title: string;
-  dueDate: string;
-  submissions?: AssignmentSubmission[];
-}
-
-export interface AssignmentSubmission {
-  id: string;
-  assignmentId: string;
-  studentId: string;
-  submitted: boolean;
-}
-
 export interface GradeColumn {
   id: string;
   title: string;

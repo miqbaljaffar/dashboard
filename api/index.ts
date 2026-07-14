@@ -55,13 +55,12 @@ app.get('/api/data', async (req, res) => {
     const attendance = await prisma.attendanceRecord.findMany();
     const incidents = await prisma.behavioralIncidence.findMany({ orderBy: { date: 'desc' } });
     const rewards = await prisma.behavioralReward.findMany({ orderBy: { date: 'desc' } });
-    const assignments = await prisma.assignment.findMany({ include: { submissions: true } });
     const gradeColumns = await prisma.gradeColumn.findMany({ include: { scores: true } });
 
     res.json({
       students,
       attendance,
-      assignments,
+      assignments: [],
       quizzes: gradeColumns, // Return as quizzes for frontend compatibility
       incidents,
       rewards,
@@ -81,17 +80,7 @@ app.post('/api/students', async (req, res) => {
       data: req.body,
     });
 
-    // Create empty submissions for existing assignments
-    const assignments = await prisma.assignment.findMany();
-    if (assignments.length > 0) {
-      await prisma.assignmentSubmission.createMany({
-        data: assignments.map(a => ({
-          assignmentId: a.id,
-          studentId: student.id,
-          submitted: false
-        }))
-      });
-    }
+
 
     // Create empty grades for existing grade columns
     const gradeColumns = await prisma.gradeColumn.findMany();
@@ -174,83 +163,7 @@ app.post('/api/attendance', async (req, res) => {
   }
 });
 
-// Dynamic Assignments CRUD
-app.post('/api/assignments', async (req, res) => {
-  const { title, dueDate } = req.body;
-  try {
-    const assignment = await prisma.assignment.create({
-      data: { title, dueDate },
-    });
-    
-    // Auto-create submissions sheet for all active students
-    const activeStudents = await prisma.student.findMany({
-      where: { status: 'Active' },
-    });
-    
-    if (activeStudents.length > 0) {
-      await prisma.assignmentSubmission.createMany({
-        data: activeStudents.map(st => ({
-          assignmentId: assignment.id,
-          studentId: st.id,
-          submitted: false
-        }))
-      });
-    }
 
-    const created = await prisma.assignment.findUnique({
-      where: { id: assignment.id },
-      include: { submissions: true }
-    });
-
-    res.status(201).json(created);
-  } catch (error) {
-    console.error('Error creating assignment:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-app.put('/api/assignments/:id', async (req, res) => {
-  const { id } = req.params;
-  const { title, dueDate } = req.body;
-  try {
-    const assignment = await prisma.assignment.update({
-      where: { id },
-      data: { title, dueDate },
-      include: { submissions: true }
-    });
-    res.json(assignment);
-  } catch (error) {
-    console.error('Error updating assignment:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-app.delete('/api/assignments/:id', async (req, res) => {
-  const { id } = req.params;
-  try {
-    await prisma.assignment.delete({ where: { id } });
-    res.json({ success: true });
-  } catch (error) {
-    console.error('Error deleting assignment:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-// Assignment Submission Toggle
-app.put('/api/submissions/:id', async (req, res) => {
-  const { id } = req.params;
-  const { submitted } = req.body;
-  try {
-    const submission = await prisma.assignmentSubmission.update({
-      where: { id },
-      data: { submitted }
-    });
-    res.json(submission);
-  } catch (error) {
-    console.error('Error toggling submission:', error);
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
 
 // Dynamic Grade Columns CRUD (Quizzes & Exams)
 app.post('/api/grades', async (req, res) => {

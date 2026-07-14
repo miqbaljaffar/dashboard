@@ -1,5 +1,5 @@
 import React from 'react';
-import { Student, AttendanceRecord, Assignment, GradeColumn } from '../types';
+import { Student, AttendanceRecord, GradeColumn } from '../types';
 import {
   Users,
   Clock,
@@ -29,7 +29,6 @@ import {
 interface DashboardViewProps {
   students: Student[];
   attendance: AttendanceRecord[];
-  assignments: Assignment[];
   grades: GradeColumn[];
   selectedStudentId: string;
   onSelectedStudentChange: (id: string) => void;
@@ -40,7 +39,6 @@ interface DashboardViewProps {
 export default function DashboardView({
   students,
   attendance,
-  assignments,
   grades,
   selectedStudentId,
   onSelectedStudentChange,
@@ -181,32 +179,7 @@ export default function DashboardView({
     { range: 'Belum Dinilai', students: studentQuizAverages.filter(avg => avg === null).length }
   ];
 
-  // Assignment submissions calculations
-  let totalExpectedSubmissions = 0;
-  let totalSubmittedCount = 0;
-  assignments.forEach(a => {
-    a.submissions?.forEach(sub => {
-      if (activeStudents.some(s => s.id === sub.studentId)) {
-        totalExpectedSubmissions++;
-        if (sub.submitted) {
-          totalSubmittedCount++;
-        }
-      }
-    });
-  });
 
-  const taskSubmissionData = [
-    { name: 'Terkumpul', value: totalSubmittedCount, color: '#10B981' },
-    { name: 'Belum Kumpul', value: Math.max(0, totalExpectedSubmissions - totalSubmittedCount), color: '#F43F5E' }
-  ];
-
-  // Latest 3 assignments completion rate stats
-  const assignmentStats = assignments.slice(-3).map(a => {
-    const total = a.submissions?.filter(sub => activeStudents.some(s => s.id === sub.studentId)).length || 0;
-    const submitted = a.submissions?.filter(sub => sub.submitted && activeStudents.some(s => s.id === sub.studentId)).length || 0;
-    const percent = total > 0 ? Math.round((submitted / total) * 100) : 0;
-    return { title: a.title, percent };
-  });
 
   // Lists: Top performing students by quiz average
   const topPerformers = activeStudents
@@ -304,27 +277,17 @@ export default function DashboardView({
   };
   const individualGradesCompareData = getIndividualGradesCompare();
 
-  // Student individual task submission calculations
-  let studentExpectedTasks = 0;
-  let studentSubmittedTasks = 0;
-  assignments.forEach(a => {
-    const sub = a.submissions?.find(s => s.studentId === selectedStudentId);
-    if (sub) {
-      studentExpectedTasks++;
-      if (sub.submitted) {
-        studentSubmittedTasks++;
-      }
-    }
-  });
-  const studentTaskSubmissionData = [
-    { name: 'Terkumpul', value: studentSubmittedTasks, color: '#10B981' },
-    { name: 'Belum Kumpul', value: Math.max(0, studentExpectedTasks - studentSubmittedTasks), color: '#F43F5E' }
-  ];
-
-  // Actionable lists for student widget: missing assignments
-  const studentMissingTasks = assignments.filter(a => {
-    const sub = a.submissions?.find(s => s.studentId === selectedStudentId);
-    return sub && !sub.submitted;
+  // Student individual grades history for widget
+  const studentGradesList = grades.map(g => {
+    const scoreObj = g.scores?.find(s => s.studentId === selectedStudentId);
+    const score = scoreObj ? scoreObj.score : null;
+    return {
+      id: g.id,
+      title: g.title,
+      type: g.type,
+      date: g.date,
+      score: score
+    };
   });
 
   return (
@@ -495,8 +458,7 @@ export default function DashboardView({
           <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Recharts Real-time Data</span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="dashboard-charts-layout">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="dashboard-charts-layout">
           {/* Chart 1: Attendance Trend (Collective) / Presensi Detail (Individual) */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
             <div className="mb-3">
@@ -572,40 +534,6 @@ export default function DashboardView({
               </ResponsiveContainer>
             </div>
           </div>
-
-          {/* Chart 3: Assignment Submission Rate (Collective) / Progres Tugas (Individual) */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-            <div className="mb-3">
-              <h4 className="text-xs font-bold text-slate-800">
-                {isIndividualFocus ? '3. Rasio Kepatuhan Tugas' : '3. Tingkat Penyerahan Tugas'}
-              </h4>
-              <p className="text-[10px] text-slate-400">
-                {isIndividualFocus ? 'Persentase tugas terkumpul vs belum dikumpul' : 'Status pengumpulan tugas oleh seluruh siswa aktif'}
-              </p>
-            </div>
-            <div className="h-52 flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={isIndividualFocus ? studentTaskSubmissionData : taskSubmissionData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={50}
-                    outerRadius={75}
-                    paddingAngle={4}
-                    dataKey="value"
-                  >
-                    {(isIndividualFocus ? studentTaskSubmissionData : taskSubmissionData).map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ fontSize: 11 }} />
-                  <Legend wrapperStyle={{ fontSize: 9 }} align="center" layout="horizontal" />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
         </div>
       </div>
 
@@ -660,24 +588,13 @@ export default function DashboardView({
                       </div>
                     ) : null}
 
-                    {studentMissingTasks.length > 0 ? (
-                      <div className="p-2.5 bg-amber-50 border border-amber-100 text-amber-800 text-xs rounded-lg flex items-start gap-2">
-                        <Clock className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-                        <div>
-                          <p className="font-bold">📝 Mengabaikan Tugas ({studentMissingTasks.length} berkas)</p>
-                          <p className="text-[10px] text-amber-600 mt-0.5">Trainee memiliki {studentMissingTasks.length} tugas yang belum dikumpulkan.</p>
-                        </div>
-                      </div>
-                    ) : null}
-
                     {(!selectedStudent?.attendanceRate || selectedStudent.attendanceRate >= 0.82) &&
-                     (studentQuizAvg === null || studentQuizAvg >= 75) &&
-                     studentMissingTasks.length === 0 ? (
+                     (studentQuizAvg === null || studentQuizAvg >= 75) ? (
                       <div className="p-2.5 bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs rounded-lg flex items-center gap-2">
                         <CheckCircle2 className="h-4.5 w-4.5 text-emerald-600 shrink-0" />
                         <div>
                           <p className="font-bold">✅ Trainee Kondisi Prima</p>
-                          <p className="text-[10px] text-emerald-600 mt-0.5">Seluruh kehadiran, nilai KKM, dan penyerahan tugas memenuhi standar kelulusan.</p>
+                          <p className="text-[10px] text-emerald-600 mt-0.5">Seluruh kehadiran dan nilai KKM memenuhi standar kelulusan.</p>
                         </div>
                       </div>
                      ) : null}
@@ -692,29 +609,40 @@ export default function DashboardView({
               </button>
             </div>
 
-            {/* Widget 2: Pending Student Assignments */}
+            {/* Widget 2: Student Score History */}
             <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between">
               <div>
                 <div className="mb-3">
-                  <h4 className="text-xs font-bold text-slate-800">5. Tugas yang Belum Dikumpulkan</h4>
-                  <p className="text-[10px] text-slate-400">Daftar tugas pending milik trainee yang belum terkumpul</p>
+                  <h4 className="text-xs font-bold text-slate-800">5. Riwayat Nilai Trainee</h4>
+                  <p className="text-[10px] text-slate-400">Daftar nilai kuis dan ulangan yang diperoleh trainee</p>
                 </div>
                 
                 <div className="space-y-2 mt-4 max-h-[190px] overflow-y-auto custom-scrollbar">
-                  {studentMissingTasks.length === 0 ? (
+                  {studentGradesList.length === 0 ? (
                     <div className="text-center py-8 text-slate-400">
-                      <p className="text-xs font-bold">Semua Tugas Beres! 🎉</p>
-                      <p className="text-[10px] mt-0.5">Trainee ini telah mengumpulkan semua tugas aktif.</p>
+                      <p className="text-xs font-bold">Belum ada kolom nilai 📊</p>
+                      <p className="text-[10px] mt-0.5">Tidak ada data kuis atau ulangan yang tercatat di kelas ini.</p>
                     </div>
                   ) : (
-                    studentMissingTasks.map(task => (
-                      <div key={task.id} className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-lg text-xs">
+                    studentGradesList.map(item => (
+                      <div key={item.id} className="flex justify-between items-center p-2.5 bg-slate-50 border border-slate-100 rounded-lg text-xs">
                         <div className="min-w-0">
-                          <p className="font-bold text-slate-700 truncate">{task.title}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5">Batas: {task.dueDate}</p>
+                          <span className={`text-[8px] font-bold px-1 rounded-xs mr-1.5 ${
+                            item.type === 'Kuis' ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-violet-50 text-violet-700 border border-violet-100'
+                          }`}>
+                            {item.type}
+                          </span>
+                          <span className="font-semibold text-slate-700 truncate">{item.title}</span>
+                          <p className="text-[9px] text-slate-400 mt-0.5 font-mono">{item.date}</p>
                         </div>
-                        <span className="text-[9px] font-bold bg-rose-50 text-rose-700 border border-rose-100 px-2 py-0.5 rounded shrink-0">
-                          Belum Kumpul
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded font-mono ${
+                          item.score !== null
+                            ? item.score >= 75
+                              ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                              : 'bg-rose-50 text-rose-700 border border-rose-100'
+                            : 'bg-slate-100 text-slate-500 border border-slate-200'
+                        }`}>
+                          {item.score !== null ? `${item.score}/100` : '-'}
                         </span>
                       </div>
                     ))
@@ -726,7 +654,7 @@ export default function DashboardView({
                 onClick={() => onNavigate('academia')}
                 className="w-full mt-4 text-center text-[10px] font-bold text-blue-600 hover:text-blue-700 block cursor-pointer"
               >
-                Input / Ubah Status Pengumpulan Tugas
+                Input / Ubah Nilai Akademik
               </button>
             </div>
           </>
@@ -765,56 +693,35 @@ export default function DashboardView({
                 onClick={() => onNavigate('academia')}
                 className="mt-4 text-center text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 cursor-pointer"
               >
-                Buka Lembar Tugas & Nilai <ChevronRight className="h-3 w-3" />
+                Buka Lembar Nilai Akademik <ChevronRight className="h-3 w-3" />
               </button>
             </div>
 
-            {/* Widget 2: Academic & Assignment Insights Block */}
+            {/* Widget 2: Academic Insights Block */}
             <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between">
               <div>
                 <div className="mb-3">
-                  <h4 className="text-xs font-bold text-slate-800">5. Analisis Tugas & Evaluasi Kelas</h4>
-                  <p className="text-[10px] text-slate-400">Ringkasan pengumpulan tugas terbaru dan perbandingan tipe nilai</p>
+                  <h4 className="text-xs font-bold text-slate-800">5. Evaluasi Nilai Akademik Kelas</h4>
+                  <p className="text-[10px] text-slate-400">Ringkasan perbandingan rata-rata tipe nilai kelas</p>
                 </div>
                 
-                <div className="space-y-3.5 mt-3">
-                  {/* Assignment Stats list */}
-                  <div>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1.5">Penyelesaian Tugas Terbaru</span>
-                    {assignmentStats.length === 0 ? (
-                      <p className="text-[11px] text-slate-500 italic py-2">Belum ada tugas aktif untuk dianalisis.</p>
-                    ) : (
-                      <div className="space-y-2">
-                        {assignmentStats.map(stat => (
-                          <div key={stat.title} className="text-xs">
-                            <div className="flex justify-between items-center mb-1 text-slate-700">
-                              <span className="font-medium truncate max-w-xs">{stat.title}</span>
-                              <span className="font-bold font-mono">{stat.percent}%</span>
-                            </div>
-                            <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-                              <div 
-                                className={`h-full rounded-full transition-all duration-300 ${
-                                  stat.percent >= 90 ? 'bg-emerald-500' : stat.percent >= 75 ? 'bg-blue-500' : 'bg-rose-500'
-                                }`}
-                                style={{ width: `${stat.percent}%` }}
-                              ></div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
+                <div className="space-y-4 mt-6">
                   {/* Formative vs Sumative breakdown */}
-                  <div className="pt-2 border-t border-slate-100 grid grid-cols-2 gap-4">
-                    <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-center">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Rata-Rata Kuis (Formatur)</span>
-                      <span className="text-lg font-black text-slate-800 font-mono mt-1 block">{avgQuizScore || '-'}</span>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-amber-50/30 border border-amber-100 p-4 rounded-xl text-center">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Rata-Rata Kuis (Formatif)</span>
+                      <span className="text-2xl font-black text-amber-700 font-mono mt-2 block">{avgQuizScore || '-'}</span>
+                      <p className="text-[9px] text-slate-400 mt-2">Berdasarkan {quizColumns.length} kuis aktif</p>
                     </div>
-                    <div className="bg-slate-50 border border-slate-100 p-2.5 rounded-lg text-center">
-                      <span className="text-[9px] text-slate-400 font-bold uppercase block">Rata-Rata Ujian (Sumatif)</span>
-                      <span className="text-lg font-black text-slate-800 font-mono mt-1 block">{avgExamScore || '-'}</span>
+                    <div className="bg-violet-50/30 border border-violet-100 p-4 rounded-xl text-center">
+                      <span className="text-[10px] text-slate-500 font-bold uppercase block">Rata-Rata Ujian (Sumatif)</span>
+                      <span className="text-2xl font-black text-violet-700 font-mono mt-2 block">{avgExamScore || '-'}</span>
+                      <p className="text-[9px] text-slate-400 mt-2">Berdasarkan {examColumns.length} ujian aktif</p>
                     </div>
+                  </div>
+                  
+                  <div className="p-3 bg-slate-50 border border-slate-100 rounded-lg text-xs text-slate-500 leading-normal">
+                    💡 <strong>Tips Sensei:</strong> Nilai kuis menggambarkan pemahaman berkala (formatif), sementara nilai ujian mengukur hasil akhir topik (sumatif). KKM kelulusan adalah <strong>75</strong>.
                   </div>
                 </div>
               </div>

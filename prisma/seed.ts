@@ -21,12 +21,6 @@ async function main() {
   console.log('  ↳ Menghapus kolom nilai (GradeColumn)...');
   await prisma.gradeColumn.deleteMany();
 
-  console.log('  ↳ Menghapus submission tugas (AssignmentSubmission)...');
-  await prisma.assignmentSubmission.deleteMany();
-
-  console.log('  ↳ Menghapus tugas (Assignment)...');
-  await prisma.assignment.deleteMany();
-
   console.log('  ↳ Menghapus catatan presensi (AttendanceRecord)...');
   await prisma.attendanceRecord.deleteMany();
 

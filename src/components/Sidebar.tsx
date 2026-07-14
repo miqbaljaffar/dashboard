@@ -24,7 +24,7 @@ export default function Sidebar({
     { id: 'dashboard', label: 'Dashboard Overview', icon: LayoutDashboard },
     { id: 'students', label: 'Data Siswa', icon: Users },
     { id: 'attendance', label: 'Kehadiran (Attendance)', icon: CalendarCheck },
-    { id: 'academia', label: 'Tugas & Nilai', icon: BookOpen }
+    { id: 'academia', label: 'Nilai Akademik', icon: BookOpen }
   ];
 
   return (

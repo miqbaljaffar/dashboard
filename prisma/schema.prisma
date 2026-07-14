@@ -22,7 +22,6 @@ model Student {
   attendance   AttendanceRecord[]
   incidents    BehavioralIncidence[]
   rewards      BehavioralReward[]
-  submissions  AssignmentSubmission[]
   grades       StudentGrade[]
 }
 
@@ -40,25 +39,7 @@ model AttendanceRecord {
   @@unique([studentId, date])
 }
 
-model Assignment {
-  id          String   @id @default(uuid())
-  title       String
-  dueDate     String
-  
-  submissions AssignmentSubmission[]
-}
 
-model AssignmentSubmission {
-  id           String   @id @default(uuid())
-  assignmentId String
-  studentId    String
-  submitted    Boolean  @default(false)
-
-  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
-
-  @@unique([assignmentId, studentId])
-}
 
 model GradeColumn {
   id        String   @id @default(uuid())
