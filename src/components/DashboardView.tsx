@@ -23,8 +23,34 @@ import {
   Legend,
   Cell,
   PieChart,
-  Pie
+  Pie,
+  AreaChart,
+  Area,
+  ComposedChart
 } from 'recharts';
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-900/90 backdrop-blur-md border border-slate-800/40 p-2.5 rounded-lg shadow-xl text-white text-[10px]">
+        <p className="font-bold mb-1 text-slate-350">{label}</p>
+        {payload.map((pld: any) => (
+          <div key={pld.name || pld.dataKey} className="flex items-center gap-2 mt-0.5">
+            <span 
+              className="h-1.5 w-1.5 rounded-full" 
+              style={{ backgroundColor: pld.color || pld.fill }}
+            ></span>
+            <span className="text-slate-300">
+              {pld.name || pld.dataKey}: <strong className="text-white">{pld.value}</strong>
+              {(pld.name?.includes('Kehadiran') || pld.name?.includes('Pagi') || pld.name?.includes('Sesi Kelas') || pld.name?.includes('Presensi')) ? '%' : ''}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
 
 interface DashboardViewProps {
   students: Student[];
@@ -89,6 +115,20 @@ export default function DashboardView({
     let sum = 0;
     let count = 0;
     quizColumns.forEach(g => {
+      const match = g.scores?.find(s => s.studentId === student.id);
+      if (match && match.score !== null && match.score !== undefined) {
+        sum += match.score;
+        count++;
+      }
+    });
+    return count ? sum / count : null;
+  });
+
+  // For each student, find their average exam score across all exam columns
+  const studentExamAverages = activeStudents.map(student => {
+    let sum = 0;
+    let count = 0;
+    examColumns.forEach(g => {
       const match = g.scores?.find(s => s.studentId === student.id);
       if (match && match.score !== null && match.score !== undefined) {
         sum += match.score;
@@ -179,20 +219,41 @@ export default function DashboardView({
     { range: 'Belum Dinilai', students: studentQuizAverages.filter(avg => avg === null).length }
   ];
 
-
+  // Chart 3: Exam Score Distribution (Histogram style)
+  const examScoreDistData = [
+    { range: '90-100 (A)', students: studentExamAverages.filter(avg => avg !== null && avg >= 90).length },
+    { range: '80-89 (B)', students: studentExamAverages.filter(avg => avg !== null && avg >= 80 && avg < 90).length },
+    { range: '70-79 (C)', students: studentExamAverages.filter(avg => avg !== null && avg >= 70 && avg < 80).length },
+    { range: '<70 (D/At Risk)', students: studentExamAverages.filter(avg => avg !== null && avg < 70).length },
+    { range: 'Belum Ujian', students: studentExamAverages.filter(avg => avg === null).length }
+  ];
 
   // Lists: Top performing students by quiz average
-  const topPerformers = activeStudents
+  const topQuizPerformers = activeStudents
     .map((student, idx) => {
       const avg = studentQuizAverages[idx];
       return { student, avg };
     })
     .filter(item => item.avg !== null)
     .sort((a, b) => (b.avg || 0) - (a.avg || 0))
-    .slice(0, 4)
+    .slice(0, 3)
     .map(item => ({
       ...item.student,
       quizScore: Math.round(item.avg || 0)
+    }));
+
+  // Lists: Top performing students by exam average
+  const topExamPerformers = activeStudents
+    .map((student, idx) => {
+      const avg = studentExamAverages[idx];
+      return { student, avg };
+    })
+    .filter(item => item.avg !== null)
+    .sort((a, b) => (b.avg || 0) - (a.avg || 0))
+    .slice(0, 3)
+    .map(item => ({
+      ...item.student,
+      examScore: Math.round(item.avg || 0)
     }));
 
   // Individual Student Focus Calculations
@@ -251,9 +312,9 @@ export default function DashboardView({
   };
   const individualAttendanceData = getIndividualAttendanceTrend();
 
-  // Student individual grades compared to class averages
-  const getIndividualGradesCompare = () => {
-    return grades.map(g => {
+  // Student individual grades compared to class averages (helper)
+  const getIndividualGradesCompare = (columnsList: typeof grades) => {
+    return columnsList.map(g => {
       const match = g.scores?.find(s => s.studentId === selectedStudentId);
       const studentScore = match ? match.score : null;
 
@@ -275,7 +336,8 @@ export default function DashboardView({
       };
     });
   };
-  const individualGradesCompareData = getIndividualGradesCompare();
+  const individualQuizCompareData = getIndividualGradesCompare(quizColumns);
+  const individualExamCompareData = getIndividualGradesCompare(examColumns);
 
   // Student individual grades history for widget
   const studentGradesList = grades.map(g => {
@@ -458,7 +520,7 @@ export default function DashboardView({
           <span className="text-[10px] font-mono bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium">Recharts Real-time Data</span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" id="dashboard-charts-layout">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" id="dashboard-charts-layout">
           {/* Chart 1: Attendance Trend (Collective) / Presensi Detail (Individual) */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
             <div className="mb-3">
@@ -473,61 +535,174 @@ export default function DashboardView({
               <ResponsiveContainer width="100%" height="100%">
                 {isIndividualFocus ? (
                   <BarChart data={individualAttendanceData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="day" tick={{ fontSize: 9 }} stroke="#94a3b8" />
-                    <YAxis tick={{ fontSize: 9 }} domain={[0, 100]} stroke="#94a3b8" />
-                    <Tooltip contentStyle={{ fontSize: 11 }} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Bar dataKey="Presensi Pagi" fill="#3B82F6" name="Pagi" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="Sesi Kelas" fill="#10B981" name="Sesi Kelas" radius={[2, 2, 0, 0]} />
+                    <defs>
+                      <linearGradient id="pagiColor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.85}/>
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.55}/>
+                      </linearGradient>
+                      <linearGradient id="siangColor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.85}/>
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0.55}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                    <XAxis dataKey="day" tick={{ fontSize: 9, fill: '#64748b' }} stroke="#cbd5e1" />
+                    <YAxis tick={{ fontSize: 9, fill: '#64748b' }} domain={[0, 100]} stroke="#cbd5e1" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 10, fontWeight: 600 }} />
+                    <Bar dataKey="Presensi Pagi" fill="url(#pagiColor)" name="Sesi Pagi" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="Sesi Kelas" fill="url(#siangColor)" name="Sesi Kelas" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 ) : (
-                  <LineChart data={attendanceTrendData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="day" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                    <YAxis tick={{ fontSize: 10 }} domain={[70, 100]} stroke="#94a3b8" />
-                    <Tooltip contentStyle={{ fontSize: 11 }} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Line type="monotone" dataKey="attendance" stroke="#2563EB" strokeWidth={2.5} name="Kehadiran" />
-                    <Line type="monotone" dataKey="target" stroke="#DC2626" strokeDasharray="4 4" strokeWidth={1.5} name="Target" />
-                  </LineChart>
+                  <ComposedChart data={attendanceTrendData} margin={{ top: 5, right: 10, left: -25, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="attendanceColor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                    <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#64748b' }} stroke="#cbd5e1" />
+                    <YAxis tick={{ fontSize: 10, fill: '#64748b' }} domain={[70, 100]} stroke="#cbd5e1" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 10, fontWeight: 600 }} />
+                    <Area type="monotone" dataKey="attendance" stroke="#3B82F6" strokeWidth={3} fillOpacity={1} fill="url(#attendanceColor)" name="Kehadiran" />
+                    <Line type="monotone" dataKey="target" stroke="#EF4444" strokeDasharray="6 6" strokeWidth={2} name="Target" dot={false} activeDot={false} />
+                  </ComposedChart>
                 )}
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* Chart 2: Quiz Score Distribution (Collective) / Perbandingan Nilai (Individual) */}
+          {/* Chart 2: Quiz Score Distribution (Collective) / Perbandingan Nilai Kuis (Individual) */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
             <div className="mb-3">
               <h4 className="text-xs font-bold text-slate-800">
-                {isIndividualFocus ? '2. Nilai Trainee vs Rata-Rata Kelas' : '2. Distribusi Nilai Kuis Siswa'}
+                {isIndividualFocus ? '2. Nilai Kuis Trainee vs Rata Kelas' : '2. Distribusi Nilai Kuis Siswa'}
               </h4>
               <p className="text-[10px] text-slate-400">
-                {isIndividualFocus ? 'Komparasi nilai per materi terhadap rerata kelas' : 'Jumlah siswa aktif berdasarkan rentang nilai kuis'}
+                {isIndividualFocus ? 'Komparasi nilai kuis per materi terhadap rerata kelas' : 'Jumlah siswa aktif berdasarkan rentang nilai kuis'}
               </p>
             </div>
             <div className="h-52">
               <ResponsiveContainer width="100%" height="100%">
                 {isIndividualFocus ? (
-                  <BarChart data={individualGradesCompareData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis dataKey="materi" tick={{ fontSize: 8 }} stroke="#94a3b8" />
-                    <YAxis tick={{ fontSize: 9 }} domain={[0, 100]} stroke="#94a3b8" />
-                    <Tooltip contentStyle={{ fontSize: 11 }} />
-                    <Legend wrapperStyle={{ fontSize: 10 }} />
-                    <Bar dataKey="Nilai Siswa" fill="#4F46E5" name="Siswa" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="Rata-Rata Kelas" fill="#94A3B8" name="Rata Kelas" radius={[2, 2, 0, 0]} />
-                  </BarChart>
+                  <ComposedChart data={individualQuizCompareData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="siswaColor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#4F46E5" stopOpacity={0.6}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                    <XAxis dataKey="materi" tick={{ fontSize: 8, fill: '#64748b' }} stroke="#cbd5e1" />
+                    <YAxis tick={{ fontSize: 9, fill: '#64748b' }} domain={[0, 100]} stroke="#cbd5e1" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 10, fontWeight: 600 }} />
+                    <Bar dataKey="Nilai Siswa" fill="url(#siswaColor)" name="Nilai Trainee" radius={[4, 4, 0, 0]} barSize={18} />
+                    <Line type="monotone" dataKey="Rata-Rata Kelas" stroke="#94A3B8" strokeWidth={2} strokeDasharray="4 4" name="Rerata Kelas" dot={{ r: 2.5, stroke: '#94A3B8', strokeWidth: 1, fill: '#fff' }} />
+                  </ComposedChart>
                 ) : (
                   <BarChart data={quizScoreDistData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
-                    <XAxis type="number" tick={{ fontSize: 10 }} stroke="#94a3b8" />
-                    <YAxis dataKey="range" type="category" tick={{ fontSize: 10 }} width={85} stroke="#94a3b8" />
-                    <Tooltip contentStyle={{ fontSize: 11 }} />
-                    <Bar dataKey="students" fill="#2563EB" name="Siswa">
-                      {quizScoreDistData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={index === 3 ? '#DC2626' : index === 4 ? '#94a3b8' : '#2563EB'} />
-                      ))}
+                    <defs>
+                      <linearGradient id="emeraldBar" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#10B981" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#059669" stopOpacity={0.9}/>
+                      </linearGradient>
+                      <linearGradient id="blueBar" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#2563EB" stopOpacity={0.9}/>
+                      </linearGradient>
+                      <linearGradient id="amberBar" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#D97706" stopOpacity={0.9}/>
+                      </linearGradient>
+                      <linearGradient id="roseBar" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#EF4444" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#DC2626" stopOpacity={0.9}/>
+                      </linearGradient>
+                      <linearGradient id="slateBar" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#94A3B8" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#475569" stopOpacity={0.9}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                    <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} stroke="#cbd5e1" />
+                    <YAxis dataKey="range" type="category" tick={{ fontSize: 10, fill: '#64748b' }} width={85} stroke="#cbd5e1" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="students" name="Jumlah Siswa" radius={[0, 4, 4, 0]}>
+                      {quizScoreDistData.map((entry, index) => {
+                        const colors = ['url(#emeraldBar)', 'url(#blueBar)', 'url(#amberBar)', 'url(#roseBar)', 'url(#slateBar)'];
+                        return <Cell key={`cell-${index}`} fill={colors[index] || 'url(#blueBar)'} />;
+                      })}
+                    </Bar>
+                  </BarChart>
+                )}
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Chart 3: Exam Score Distribution (Collective) / Perbandingan Nilai Ulangan (Individual) */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
+            <div className="mb-3">
+              <h4 className="text-xs font-bold text-slate-800">
+                {isIndividualFocus ? '3. Nilai Ulangan Trainee vs Rata Kelas' : '3. Distribusi Nilai Ulangan Siswa'}
+              </h4>
+              <p className="text-[10px] text-slate-400">
+                {isIndividualFocus ? 'Komparasi nilai ulangan per materi terhadap rerata kelas' : 'Jumlah siswa aktif berdasarkan rentang nilai ulangan'}
+              </p>
+            </div>
+            <div className="h-52">
+              <ResponsiveContainer width="100%" height="100%">
+                {isIndividualFocus ? (
+                  <ComposedChart data={individualExamCompareData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="siswaExamColor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8B5CF6" stopOpacity={0.9}/>
+                        <stop offset="95%" stopColor="#7C3AED" stopOpacity={0.6}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                    <XAxis dataKey="materi" tick={{ fontSize: 8, fill: '#64748b' }} stroke="#cbd5e1" />
+                    <YAxis tick={{ fontSize: 9, fill: '#64748b' }} domain={[0, 100]} stroke="#cbd5e1" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Legend wrapperStyle={{ fontSize: 10, fontWeight: 600 }} />
+                    <Bar dataKey="Nilai Siswa" fill="url(#siswaExamColor)" name="Nilai Trainee" radius={[4, 4, 0, 0]} barSize={18} />
+                    <Line type="monotone" dataKey="Rata-Rata Kelas" stroke="#94A3B8" strokeWidth={2} strokeDasharray="4 4" name="Rerata Kelas" dot={{ r: 2.5, stroke: '#94A3B8', strokeWidth: 1, fill: '#fff' }} />
+                  </ComposedChart>
+                ) : (
+                  <BarChart data={examScoreDistData} layout="vertical" margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="emeraldBarExam" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#10B981" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#059669" stopOpacity={0.9}/>
+                      </linearGradient>
+                      <linearGradient id="blueBarExam" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#2563EB" stopOpacity={0.9}/>
+                      </linearGradient>
+                      <linearGradient id="amberBarExam" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#D97706" stopOpacity={0.9}/>
+                      </linearGradient>
+                      <linearGradient id="roseBarExam" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#EF4444" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#DC2626" stopOpacity={0.9}/>
+                      </linearGradient>
+                      <linearGradient id="slateBarExam" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#94A3B8" stopOpacity={0.8}/>
+                        <stop offset="100%" stopColor="#475569" stopOpacity={0.9}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="4 4" stroke="#e2e8f0" />
+                    <XAxis type="number" tick={{ fontSize: 10, fill: '#64748b' }} stroke="#cbd5e1" />
+                    <YAxis dataKey="range" type="category" tick={{ fontSize: 10, fill: '#64748b' }} width={85} stroke="#cbd5e1" />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="students" name="Jumlah Siswa" radius={[0, 4, 4, 0]}>
+                      {examScoreDistData.map((entry, index) => {
+                        const colors = ['url(#emeraldBarExam)', 'url(#blueBarExam)', 'url(#amberBarExam)', 'url(#roseBarExam)', 'url(#slateBarExam)'];
+                        return <Cell key={`cell-${index}`} fill={colors[index] || 'url(#blueBarExam)'} />;
+                      })}
                     </Bar>
                   </BarChart>
                 )}
@@ -661,32 +836,58 @@ export default function DashboardView({
         ) : (
           /* COLLECTIVE CLASS FOCUS WIDGETS */
           <>
-            {/* Widget 1: Top Performing Students Block */}
+            {/* Widget 1: Leaderboards Block */}
             <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-2xs flex flex-col justify-between">
               <div>
                 <div className="mb-3">
-                  <h4 className="text-xs font-bold text-slate-800">4. Honor Roll: Siswa Berprestasi Terbaik</h4>
-                  <p className="text-[10px] text-slate-400">Diurutkan berdasarkan nilai kuis rata-rata</p>
+                  <h4 className="text-xs font-bold text-slate-800">4. Honor Roll: Leaderboard Kelas</h4>
+                  <p className="text-[10px] text-slate-400">Daftar siswa dengan pencapaian nilai tertinggi kuis & ulangan</p>
                 </div>
-                <div className="space-y-2.5 mt-2">
-                  {topPerformers.length === 0 ? (
-                    <p className="text-xs text-slate-400 text-center py-6">Belum ada siswa dengan nilai kuis aktif.</p>
-                  ) : (
-                    topPerformers.map((student, idx) => (
-                      <div key={student.id} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100 rounded-lg text-xs">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-blue-600 font-mono text-[11px] w-4">#{idx+1}</span>
-                          <span className="font-semibold text-slate-700">{student.name}</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-[10px] bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-mono font-bold">
-                            Presensi: {Math.round(student.attendanceRate * 100)}%
-                          </span>
-                          <span className="font-bold text-green-700 font-mono">Kuis Avg: {student.quizScore}</span>
-                        </div>
-                      </div>
-                    ))
-                  )}
+                
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  {/* Leaderboard Kuis */}
+                  <div className="space-y-2">
+                    <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 uppercase tracking-wider block w-max mb-1">
+                      🏆 Leaderboard Kuis
+                    </span>
+                    <div className="space-y-1.5">
+                      {topQuizPerformers.length === 0 ? (
+                        <p className="text-[10px] text-slate-400 italic py-4 text-center">Belum ada nilai kuis.</p>
+                      ) : (
+                        topQuizPerformers.map((student, idx) => (
+                          <div key={student.id} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100/60 rounded-lg text-xs">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-bold text-amber-600 font-mono text-[10px] w-3 shrink-0">#{idx+1}</span>
+                              <span className="font-semibold text-slate-700 truncate">{student.name}</span>
+                            </div>
+                            <span className="font-bold text-amber-700 font-mono text-[10px] shrink-0">{student.quizScore} Pts</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Leaderboard Ulangan */}
+                  <div className="space-y-2">
+                    <span className="text-[9px] font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-100 uppercase tracking-wider block w-max mb-1">
+                      🏆 Leaderboard Ulangan
+                    </span>
+                    <div className="space-y-1.5">
+                      {topExamPerformers.length === 0 ? (
+                        <p className="text-[10px] text-slate-400 italic py-4 text-center">Belum ada nilai ulangan.</p>
+                      ) : (
+                        topExamPerformers.map((student, idx) => (
+                          <div key={student.id} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100/60 rounded-lg text-xs">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-bold text-violet-600 font-mono text-[10px] w-3 shrink-0">#{idx+1}</span>
+                              <span className="font-semibold text-slate-700 truncate">{student.name}</span>
+                            </div>
+                            <span className="font-bold text-violet-700 font-mono text-[10px] shrink-0">{student.examScore} Pts</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
               <button 
