@@ -228,7 +228,7 @@ export default function DashboardView({
     { range: 'Belum Ujian', students: studentExamAverages.filter(avg => avg === null).length }
   ];
 
-  // Lists: Top performing students by quiz average
+  // Lists: Top performing students by quiz average (Top 5)
   const topQuizPerformers = activeStudents
     .map((student, idx) => {
       const avg = studentQuizAverages[idx];
@@ -236,13 +236,27 @@ export default function DashboardView({
     })
     .filter(item => item.avg !== null)
     .sort((a, b) => (b.avg || 0) - (a.avg || 0))
-    .slice(0, 3)
+    .slice(0, 5)
     .map(item => ({
       ...item.student,
       quizScore: Math.round(item.avg || 0)
     }));
 
-  // Lists: Top performing students by exam average
+  // Lists: Bottom performing students by quiz average who need bimbingan (Bottom 5, score < 75)
+  const bottomQuizPerformers = activeStudents
+    .map((student, idx) => {
+      const avg = studentQuizAverages[idx];
+      return { student, avg };
+    })
+    .filter(item => item.avg !== null && item.avg < 75)
+    .sort((a, b) => (a.avg || 0) - (b.avg || 0))
+    .slice(0, 5)
+    .map(item => ({
+      ...item.student,
+      quizScore: Math.round(item.avg || 0)
+    }));
+
+  // Lists: Top performing students by exam average (Top 5)
   const topExamPerformers = activeStudents
     .map((student, idx) => {
       const avg = studentExamAverages[idx];
@@ -250,7 +264,21 @@ export default function DashboardView({
     })
     .filter(item => item.avg !== null)
     .sort((a, b) => (b.avg || 0) - (a.avg || 0))
-    .slice(0, 3)
+    .slice(0, 5)
+    .map(item => ({
+      ...item.student,
+      examScore: Math.round(item.avg || 0)
+    }));
+
+  // Lists: Bottom performing students by exam average who need bimbingan (Bottom 5, score < 75)
+  const bottomExamPerformers = activeStudents
+    .map((student, idx) => {
+      const avg = studentExamAverages[idx];
+      return { student, avg };
+    })
+    .filter(item => item.avg !== null && item.avg < 75)
+    .sort((a, b) => (a.avg || 0) - (b.avg || 0))
+    .slice(0, 5)
     .map(item => ({
       ...item.student,
       examScore: Math.round(item.avg || 0)
@@ -841,26 +869,53 @@ export default function DashboardView({
               <div>
                 <div className="mb-3">
                   <h4 className="text-xs font-bold text-slate-800">4. Honor Roll: Leaderboard Kelas</h4>
-                  <p className="text-[10px] text-slate-400">Daftar siswa dengan pencapaian nilai tertinggi kuis & ulangan</p>
+                  <p className="text-[10px] text-slate-400">Daftar siswa dengan pencapaian 5 teratas dan 5 terbawah kuis & ulangan</p>
                 </div>
                 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-3">
                   {/* Leaderboard Kuis */}
-                  <div className="space-y-2">
-                    <span className="text-[9px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 uppercase tracking-wider block w-max mb-1">
-                      🏆 Leaderboard Kuis
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-100 uppercase tracking-wider block w-max">
+                      📝 Kategori Kuis
                     </span>
+                    
+                    {/* Top 5 Quiz */}
                     <div className="space-y-1.5">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        🏆 5 Teratas
+                      </span>
                       {topQuizPerformers.length === 0 ? (
-                        <p className="text-[10px] text-slate-400 italic py-4 text-center">Belum ada nilai kuis.</p>
+                        <p className="text-[10px] text-slate-400 italic py-2 text-center">Belum ada nilai kuis.</p>
                       ) : (
                         topQuizPerformers.map((student, idx) => (
-                          <div key={student.id} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100/60 rounded-lg text-xs">
+                          <div key={student.id} className="flex items-center justify-between p-1.5 bg-emerald-50/20 border border-emerald-100/50 rounded-lg text-xs">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="font-bold text-amber-600 font-mono text-[10px] w-3 shrink-0">#{idx+1}</span>
+                              <span className="font-bold text-emerald-600 font-mono text-[10px] w-3 shrink-0">#{idx+1}</span>
                               <span className="font-semibold text-slate-700 truncate">{student.name}</span>
                             </div>
-                            <span className="font-bold text-amber-700 font-mono text-[10px] shrink-0">{student.quizScore} Pts</span>
+                            <span className="font-bold text-emerald-700 font-mono text-[10px] shrink-0">{student.quizScore} Pts</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Bottom 5 Quiz */}
+                    <div className="space-y-1.5">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        ⚠️ 5 Terbawah / Butuh Bimbingan
+                      </span>
+                      {bottomQuizPerformers.length === 0 ? (
+                        <p className="text-[10px] text-emerald-650 bg-emerald-50/20 border border-emerald-100 p-2 rounded-lg text-center font-medium italic">
+                          Luar biasa! Tidak ada siswa di bawah KKM.
+                        </p>
+                      ) : (
+                        bottomQuizPerformers.map((student, idx) => (
+                          <div key={student.id} className="flex items-center justify-between p-1.5 bg-rose-50/30 border border-rose-100/50 rounded-lg text-xs">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-bold text-rose-600 font-mono text-[10px] w-3 shrink-0">#{idx+1}</span>
+                              <span className="font-semibold text-slate-700 truncate">{student.name}</span>
+                            </div>
+                            <span className="font-bold text-rose-700 font-mono text-[10px] shrink-0">{student.quizScore} Pts</span>
                           </div>
                         ))
                       )}
@@ -868,21 +923,48 @@ export default function DashboardView({
                   </div>
 
                   {/* Leaderboard Ulangan */}
-                  <div className="space-y-2">
-                    <span className="text-[9px] font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-100 uppercase tracking-wider block w-max mb-1">
-                      🏆 Leaderboard Ulangan
+                  <div className="space-y-4">
+                    <span className="text-[10px] font-bold text-violet-700 bg-violet-50 px-2 py-0.5 rounded border border-violet-100 uppercase tracking-wider block w-max">
+                      🎓 Kategori Ulangan
                     </span>
+                    
+                    {/* Top 5 Exam */}
                     <div className="space-y-1.5">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        🏆 5 Teratas
+                      </span>
                       {topExamPerformers.length === 0 ? (
-                        <p className="text-[10px] text-slate-400 italic py-4 text-center">Belum ada nilai ulangan.</p>
+                        <p className="text-[10px] text-slate-400 italic py-2 text-center">Belum ada nilai ulangan.</p>
                       ) : (
                         topExamPerformers.map((student, idx) => (
-                          <div key={student.id} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-100/60 rounded-lg text-xs">
+                          <div key={student.id} className="flex items-center justify-between p-1.5 bg-emerald-50/20 border border-emerald-100/50 rounded-lg text-xs">
                             <div className="flex items-center gap-1.5 min-w-0">
-                              <span className="font-bold text-violet-600 font-mono text-[10px] w-3 shrink-0">#{idx+1}</span>
+                              <span className="font-bold text-emerald-600 font-mono text-[10px] w-3 shrink-0">#{idx+1}</span>
                               <span className="font-semibold text-slate-700 truncate">{student.name}</span>
                             </div>
-                            <span className="font-bold text-violet-700 font-mono text-[10px] shrink-0">{student.examScore} Pts</span>
+                            <span className="font-bold text-emerald-700 font-mono text-[10px] shrink-0">{student.examScore} Pts</span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+
+                    {/* Bottom 5 Exam */}
+                    <div className="space-y-1.5">
+                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider block mb-1">
+                        ⚠️ 5 Terbawah / Butuh Bimbingan
+                      </span>
+                      {bottomExamPerformers.length === 0 ? (
+                        <p className="text-[10px] text-emerald-650 bg-emerald-50/20 border border-emerald-100 p-2 rounded-lg text-center font-medium italic">
+                          Luar biasa! Tidak ada siswa di bawah KKM.
+                        </p>
+                      ) : (
+                        bottomExamPerformers.map((student, idx) => (
+                          <div key={student.id} className="flex items-center justify-between p-1.5 bg-rose-50/30 border border-rose-100/50 rounded-lg text-xs">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <span className="font-bold text-rose-600 font-mono text-[10px] w-3 shrink-0">#{idx+1}</span>
+                              <span className="font-semibold text-slate-700 truncate">{student.name}</span>
+                            </div>
+                            <span className="font-bold text-rose-700 font-mono text-[10px] shrink-0">{student.examScore} Pts</span>
                           </div>
                         ))
                       )}
@@ -892,7 +974,7 @@ export default function DashboardView({
               </div>
               <button 
                 onClick={() => onNavigate('academia')}
-                className="mt-4 text-center text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 cursor-pointer"
+                className="mt-4 text-center text-[10px] font-bold text-blue-600 hover:text-blue-700 flex items-center justify-center gap-1 cursor-pointer border-t border-slate-100 pt-3"
               >
                 Buka Lembar Nilai Akademik <ChevronRight className="h-3 w-3" />
               </button>
