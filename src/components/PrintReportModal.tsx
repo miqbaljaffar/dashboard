@@ -86,6 +86,12 @@ export default function PrintReportModal({
     }
   }, [reportType, selectedDate]);
 
+  // Printable Grade Columns for Academic Report
+  const printableGrades = useMemo(() => {
+    if (academiaTypeFilter === 'all') return grades;
+    return grades.filter(g => g.type === academiaTypeFilter);
+  }, [grades, academiaTypeFilter]);
+
   if (!isOpen) return null;
 
   // All active students (single class)
@@ -178,11 +184,7 @@ export default function PrintReportModal({
   const isIndividualFocus = selectedStudentId !== undefined && selectedStudentId !== 'all';
   const selectedStudent = students.find(s => s.id === selectedStudentId);
 
-  // Printable Grade Columns for Academic Report
-  const printableGrades = useMemo(() => {
-    if (academiaTypeFilter === 'all') return grades;
-    return grades.filter(g => g.type === academiaTypeFilter);
-  }, [grades, academiaTypeFilter]);
+
 
   // Render Dashboard Summary Report
   const renderDashboardReport = () => {
