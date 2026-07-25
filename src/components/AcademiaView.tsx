@@ -545,7 +545,7 @@ export default function AcademiaView({
                       {activeGradeCol.title}
                     </h3>
                   </div>
-                  <p className="text-xs text-slate-500 font-mono mt-1">Fuji Elite Class • Tanggal Pelaksanaan: {activeGradeCol.date}</p>
+                  <p className="text-xs text-slate-500 font-mono mt-1">Tanggal Pelaksanaan: {activeGradeCol.date}</p>
                 </div>
 
                 <div className="flex items-center gap-2 select-none">

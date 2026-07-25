@@ -622,7 +622,7 @@ export default function DashboardView({
                 <span>Cuti: <strong className="text-amber-600">{students.filter(s => s.status === 'Leave').length}</strong></span>
               </div>
             )}
-            <span className="text-[11px] font-semibold text-blue-600 bg-blue-50/80 px-2 py-0.5 rounded">Fuji Elite</span>
+            <span className="text-[11px] font-semibold text-blue-600 bg-blue-50/80 px-2 py-0.5 rounded">UTB Banjar</span>
           </div>
         </div>
 
@@ -975,7 +975,7 @@ export default function DashboardView({
                   <div className="bg-slate-50 border border-slate-200/80 p-3 rounded-lg flex items-center justify-between">
                     <div>
                       <p className="font-extrabold text-slate-800 text-xs">{selectedStudent?.name}</p>
-                      <p className="text-xs text-slate-500 font-mono mt-0.5">ID: {selectedStudent?.id} | Class: {selectedStudent?.classroom || 'Fuji Elite'}</p>
+                      <p className="text-xs text-slate-500 font-mono mt-0.5">ID: {selectedStudent?.id}</p>
                     </div>
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-md border ${
                       selectedStudent?.status === 'Active' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'

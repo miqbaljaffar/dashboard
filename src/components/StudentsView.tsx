@@ -51,7 +51,7 @@ export default function StudentsView({
   const [newName, setNewName] = useState('');
   const [newGender, setNewGender] = useState<'Male' | 'Female'>('Male');
   const [newAge, setNewAge] = useState(20);
-  const [newClassroom, setNewClassroom] = useState('Fuji Elite Class');
+  const [newClassroom, setNewClassroom] = useState('UTB Banjar');
   const [newEnrollDate, setNewEnrollDate] = useState(new Date().toISOString().split('T')[0]);
   const [newGradTarget, setNewGradTarget] = useState('2026-06-30');
 
@@ -409,7 +409,7 @@ export default function StudentsView({
                             ) : (
                               <>
                                 <p className="font-bold text-slate-900 text-xs truncate">{st.name}</p>
-                                <p className="text-xs text-slate-500 font-mono mt-0.5">{st.id} • Umur {st.age} Th • {st.classroom}</p>
+                                <p className="text-xs text-slate-500 font-mono mt-0.5">{st.id} • Umur {st.age} Th</p>
                               </>
                             )}
                           </div>

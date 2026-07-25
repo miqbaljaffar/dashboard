@@ -292,7 +292,7 @@ export default function AttendanceView({
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            Pencatatan presensi 2-sesi harian untuk siswa Fuji Elite Class UTB Banjar.
+            Pencatatan presensi 2-sesi harian untuk siswa UTB Banjar.
           </p>
         </div>
 
@@ -412,7 +412,7 @@ export default function AttendanceView({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-3 gap-3">
               <div>
                 <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
-                  Presensi Mandiri — Fuji Elite Class ({selectedDate})
+                  Presensi Mandiri — UTB Banjar ({selectedDate})
                 </h3>
                 <p className="text-xs text-slate-400 mt-0.5">Verifikasi 2-Sesi Aktif Harian</p>
               </div>

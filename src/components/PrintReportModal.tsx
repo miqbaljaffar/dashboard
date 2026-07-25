@@ -185,7 +185,7 @@ export default function PrintReportModal({
             <div>
               <h3 className="text-xs font-bold text-slate-800 uppercase">Laporan Hasil Belajar Individual</h3>
               <p className="text-xs text-slate-700 mt-1">Nama: <strong className="text-slate-900">{selectedStudent.name}</strong> (ID: {selectedStudent.id})</p>
-              <p className="text-[10px] text-slate-400 font-mono mt-0.5">Kelas: Fuji Elite Class • Status: {selectedStudent.status === 'Active' ? 'Aktif' : 'Cuti'}</p>
+              <p className="text-[10px] text-slate-400 font-mono mt-0.5">Status: {selectedStudent.status === 'Active' ? 'Aktif' : 'Cuti'}</p>
             </div>
             <div className="text-right">
               <span className={`text-[9px] font-bold px-2 py-1 rounded border ${
