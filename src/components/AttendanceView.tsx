@@ -18,7 +18,6 @@ import {
   Search,
   Filter,
   FileSpreadsheet,
-  Moon,
   Sun,
   BookOpen,
   CheckCheck
@@ -79,7 +78,7 @@ export default function AttendanceView({
   };
 
   // Status Lookup Helper
-  const getStatusForStudent = (studentId: string, session: 'morning' | 'classSession' | 'eveningRollCall') => {
+  const getStatusForStudent = (studentId: string, session: 'morning' | 'classSession') => {
     const record = attendance.find(a => a.studentId === studentId && a.date === selectedDate);
     if (!record) return 'Present'; // default to Present if unmarked
     return record[session];
@@ -88,7 +87,7 @@ export default function AttendanceView({
   // Status Update Handler
   const handleStatusChange = (
     studentId: string,
-    session: 'morning' | 'classSession' | 'eveningRollCall',
+    session: 'morning' | 'classSession',
     newStatus: 'Present' | 'Late' | 'Sick' | 'Permission' | 'Absent'
   ) => {
     const existing = attendance.find(a => a.studentId === studentId && a.date === selectedDate);
@@ -108,7 +107,7 @@ export default function AttendanceView({
   };
 
   // Mass Bulk Mark All Present Handler
-  const handleBulkMarkPresent = (session: 'morning' | 'classSession' | 'eveningRollCall') => {
+  const handleBulkMarkPresent = (session: 'morning' | 'classSession') => {
     let updateCount = 0;
     activeStudents.forEach(st => {
       const existing = attendance.find(a => a.studentId === st.id && a.date === selectedDate);
@@ -129,12 +128,12 @@ export default function AttendanceView({
       }
     });
 
-    const sessionLabel = session === 'morning' ? 'Sesi 1 (Pagi)' : session === 'classSession' ? 'Sesi 2 (Kelas)' : 'Sesi 3 (Apel Malam)';
+    const sessionLabel = session === 'morning' ? 'Sesi 1 (Pagi)' : 'Sesi 2 (Kelas)';
     setToastMessage(`Berhasil menandai ${totalActive} siswa HADIR pada ${sessionLabel}!`);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  // Calculate Class Stats for 3 Sessions
+  // Calculate Class Stats for 2 Sessions
   const classStats = useMemo(() => {
     let presentCount = 0;
     let lateCount = 0;
@@ -142,7 +141,7 @@ export default function AttendanceView({
     let absentCount = 0;
 
     activeStudents.forEach(s => {
-      ['morning', 'classSession', 'eveningRollCall'].forEach(session => {
+      ['morning', 'classSession'].forEach(session => {
         const stat = getStatusForStudent(s.id, session as any);
         if (stat === 'Present') presentCount++;
         else if (stat === 'Late') lateCount++;
@@ -151,7 +150,7 @@ export default function AttendanceView({
       });
     });
 
-    const totalSessions = totalActive * 3;
+    const totalSessions = totalActive * 2;
     if (totalSessions === 0) return { rate: 100, present: 0, late: 0, sickAndPerm: 0, absent: 0 };
     
     // Formula: (Present + Late * 0.5) / Total Sessions
@@ -170,7 +169,7 @@ export default function AttendanceView({
     return students.filter(s => s.status === 'Active' && s.attendanceRate < 0.82);
   }, [students]);
 
-  // Dynamic Weekly Heatmap Computed Real-Time from Attendance Data
+  // Dynamic Weekly Heatmap Computed Real-Time from Attendance Data (2 Sessions)
   const dynamicHeatmapData = useMemo(() => {
     const targetDateObj = new Date(selectedDate);
     const daysList = [];
@@ -186,7 +185,7 @@ export default function AttendanceView({
 
       const dayRecords = attendance.filter(a => a.date === dateStr);
 
-      const getSessionColor = (session: 'morning' | 'classSession' | 'eveningRollCall') => {
+      const getSessionColor = (session: 'morning' | 'classSession') => {
         if (dayRecords.length === 0) return 'gray';
         let hasAbsent = false;
         let hasLateOrPermit = false;
@@ -206,8 +205,7 @@ export default function AttendanceView({
         day: dayLabel,
         isToday: dateStr === selectedDate,
         morning: getSessionColor('morning'),
-        class: getSessionColor('classSession'),
-        evening: getSessionColor('eveningRollCall')
+        class: getSessionColor('classSession')
       });
     }
 
@@ -227,13 +225,12 @@ export default function AttendanceView({
       list = list.filter(s => {
         const m = getStatusForStudent(s.id, 'morning');
         const c = getStatusForStudent(s.id, 'classSession');
-        const e = getStatusForStudent(s.id, 'eveningRollCall');
 
         if (statusFilter === 'issue') {
-          return m === 'Late' || m === 'Absent' || c === 'Late' || c === 'Absent' || e === 'Late' || e === 'Absent';
+          return m === 'Late' || m === 'Absent' || c === 'Late' || c === 'Absent';
         }
         if (statusFilter === 'permit') {
-          return m === 'Sick' || m === 'Permission' || c === 'Sick' || c === 'Permission' || e === 'Sick' || e === 'Permission';
+          return m === 'Sick' || m === 'Permission' || c === 'Sick' || c === 'Permission';
         }
         return true;
       });
@@ -244,18 +241,16 @@ export default function AttendanceView({
 
   // Export Daily Attendance CSV Handler
   const handleExportAttendanceCSV = () => {
-    const headers = ['ID Siswa', 'Nama Siswa', 'Tanggal', 'Sesi 1 (Pagi 08:30)', 'Sesi 2 (Kelas 13:00)', 'Sesi 3 (Apel 19:30)'];
+    const headers = ['ID Siswa', 'Nama Siswa', 'Tanggal', 'Sesi 1 (Pagi 08:30)', 'Sesi 2 (Kelas 13:00)'];
     const rows = activeStudents.map(st => {
       const m = getStatusForStudent(st.id, 'morning');
       const c = getStatusForStudent(st.id, 'classSession');
-      const e = getStatusForStudent(st.id, 'eveningRollCall');
       return [
         st.id,
         `"${st.name.replace(/"/g, '""')}"`,
         selectedDate,
         m,
-        c,
-        e
+        c
       ].join(',');
     });
 
@@ -295,12 +290,9 @@ export default function AttendanceView({
             <span className="bg-indigo-50 text-indigo-700 text-xs font-bold px-2.5 py-0.5 rounded-md border border-indigo-100 flex items-center gap-1">
               <BookOpen className="h-3 w-3 text-blue-500" /> Sesi 2: 13:00 - 16:00
             </span>
-            <span className="bg-violet-50 text-violet-700 text-xs font-bold px-2.5 py-0.5 rounded-md border border-violet-100 flex items-center gap-1">
-              <Moon className="h-3 w-3 text-violet-500" /> Sesi 3: 19:30 - 20:30 (Apel Malam)
-            </span>
           </div>
           <p className="text-xs text-slate-500 mt-2">
-            Pencatatan presensi 3-sesi harian untuk siswa Fuji Elite Class UTB Banjar.
+            Pencatatan presensi 2-sesi harian untuk siswa Fuji Elite Class UTB Banjar.
           </p>
         </div>
 
@@ -422,33 +414,25 @@ export default function AttendanceView({
                 <h3 className="text-xs font-extrabold text-slate-900 uppercase tracking-wider">
                   Presensi Mandiri — Fuji Elite Class ({selectedDate})
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">Verifikasi 3-Sesi Aktif Harian</p>
+                <p className="text-xs text-slate-400 mt-0.5">Verifikasi 2-Sesi Aktif Harian</p>
               </div>
 
               {/* Bulk Mark All Buttons */}
-              <div className="flex items-center gap-1.5 flex-wrap select-none">
+              <div className="flex items-center gap-2 select-none">
                 <button
                   onClick={() => handleBulkMarkPresent('morning')}
                   title="Tandai Hadir Semua Siswa Sesi 1 Pagi"
-                  className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-xs font-bold transition cursor-pointer"
+                  className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-md text-xs font-bold transition cursor-pointer"
                 >
-                  <Sun className="h-3 w-3 text-amber-500 inline mr-1" /> All Hadir S1
+                  <Sun className="h-3 w-3 text-amber-500 inline mr-1" /> All Hadir S1 (Pagi)
                 </button>
                 
                 <button
                   onClick={() => handleBulkMarkPresent('classSession')}
                   title="Tandai Hadir Semua Siswa Sesi 2 Kelas"
-                  className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-md text-xs font-bold transition cursor-pointer"
+                  className="px-3 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 rounded-md text-xs font-bold transition cursor-pointer"
                 >
-                  <BookOpen className="h-3 w-3 text-blue-500 inline mr-1" /> All Hadir S2
-                </button>
-
-                <button
-                  onClick={() => handleBulkMarkPresent('eveningRollCall')}
-                  title="Tandai Hadir Semua Siswa Sesi 3 Apel Malam"
-                  className="px-2.5 py-1 bg-violet-50 hover:bg-violet-100 text-violet-700 border border-violet-200 rounded-md text-xs font-bold transition cursor-pointer"
-                >
-                  <Moon className="h-3 w-3 text-violet-500 inline mr-1" /> All Hadir S3
+                  <BookOpen className="h-3 w-3 text-blue-500 inline mr-1" /> All Hadir S2 (Kelas)
                 </button>
               </div>
             </div>
@@ -485,16 +469,15 @@ export default function AttendanceView({
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-xs bg-slate-50">
-                    <th className="py-3 px-3">Nama Siswa</th>
-                    <th className="py-3 px-2 text-center w-36">S1: Pagi (08:30)</th>
-                    <th className="py-3 px-2 text-center w-36">S2: Kelas (13:00)</th>
-                    <th className="py-3 px-2 text-center w-36">S3: Apel Malam (19:30)</th>
+                    <th className="py-3 px-4">Nama Siswa</th>
+                    <th className="py-3 px-3 text-center w-44">Sesi 1 (08:30 - 11:30)</th>
+                    <th className="py-3 px-3 text-center w-44">Sesi 2 (13:00 - 16:00)</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredStudents.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="py-8 text-center text-slate-400 text-xs font-semibold">
+                      <td colSpan={3} className="py-8 text-center text-slate-400 text-xs font-semibold">
                         Tidak ada siswa yang cocok dengan kriteria pencarian / filter status.
                       </td>
                     </tr>
@@ -502,21 +485,20 @@ export default function AttendanceView({
                     filteredStudents.map(st => {
                       const morningStat = getStatusForStudent(st.id, 'morning');
                       const classStat = getStatusForStudent(st.id, 'classSession');
-                      const eveningStat = getStatusForStudent(st.id, 'eveningRollCall');
 
                       return (
                         <tr key={st.id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="py-3 px-3">
+                          <td className="py-3 px-4">
                             <p className="font-bold text-slate-900 text-xs">{st.name}</p>
                             <p className="text-xs text-slate-500 font-mono mt-0.5">{st.id}</p>
                           </td>
                           
                           {/* Sesi 1 Shift */}
-                          <td className="py-3 px-2 text-center">
+                          <td className="py-3 px-3 text-center">
                             <select
                               id={`attn-morn-${st.id}`}
                               aria-label={`Presensi Sesi 1 ${st.name}`}
-                              className={`border rounded-lg px-2 py-1 text-xs font-bold cursor-pointer focus:outline-none transition-colors ${
+                              className={`border rounded-lg px-2.5 py-1 text-xs font-bold cursor-pointer focus:outline-none transition-colors ${
                                 morningStat === 'Present' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' :
                                 morningStat === 'Late' ? 'bg-amber-50 text-amber-700 border-amber-300' :
                                 morningStat === 'Absent' ? 'bg-rose-50 text-rose-700 border-rose-300 font-extrabold' : 'bg-slate-50 text-slate-700 border-slate-200'
@@ -533,38 +515,17 @@ export default function AttendanceView({
                           </td>
 
                           {/* Sesi 2 Shift */}
-                          <td className="py-3 px-2 text-center">
+                          <td className="py-3 px-3 text-center">
                             <select
                               id={`attn-class-${st.id}`}
                               aria-label={`Presensi Sesi 2 ${st.name}`}
-                              className={`border rounded-lg px-2 py-1 text-xs font-bold cursor-pointer focus:outline-none transition-colors ${
+                              className={`border rounded-lg px-2.5 py-1 text-xs font-bold cursor-pointer focus:outline-none transition-colors ${
                                 classStat === 'Present' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' :
                                 classStat === 'Late' ? 'bg-amber-50 text-amber-700 border-amber-300' :
                                 classStat === 'Absent' ? 'bg-rose-50 text-rose-700 border-rose-300 font-extrabold' : 'bg-slate-50 text-slate-700 border-slate-200'
                               }`}
                               value={classStat}
                               onChange={(e) => handleStatusChange(st.id, 'classSession', e.target.value as any)}
-                            >
-                              <option value="Present">✅ Hadir</option>
-                              <option value="Late">⚠️ Telat</option>
-                              <option value="Sick">🏥 Sakit</option>
-                              <option value="Permission">📋 Izin</option>
-                              <option value="Absent">❌ Alpa</option>
-                            </select>
-                          </td>
-
-                          {/* Sesi 3 Shift (Evening Roll Call) */}
-                          <td className="py-3 px-2 text-center">
-                            <select
-                              id={`attn-eve-${st.id}`}
-                              aria-label={`Presensi Sesi 3 ${st.name}`}
-                              className={`border rounded-lg px-2 py-1 text-xs font-bold cursor-pointer focus:outline-none transition-colors ${
-                                eveningStat === 'Present' ? 'bg-emerald-50 text-emerald-700 border-emerald-300' :
-                                eveningStat === 'Late' ? 'bg-amber-50 text-amber-700 border-amber-300' :
-                                eveningStat === 'Absent' ? 'bg-rose-50 text-rose-700 border-rose-300 font-extrabold' : 'bg-slate-50 text-slate-700 border-slate-200'
-                              }`}
-                              value={eveningStat}
-                              onChange={(e) => handleStatusChange(st.id, 'eveningRollCall', e.target.value as any)}
                             >
                               <option value="Present">✅ Hadir</option>
                               <option value="Late">⚠️ Telat</option>
@@ -600,16 +561,15 @@ export default function AttendanceView({
               </div>
             </div>
 
-            <div className="grid grid-cols-4 gap-2 text-center text-xs font-bold text-slate-400 mt-3 border-b border-slate-100 pb-1">
+            <div className="grid grid-cols-3 gap-2 text-center text-xs font-bold text-slate-400 mt-3 border-b border-slate-100 pb-1">
               <span className="text-left">Hari</span>
               <span>S1 (Pagi)</span>
               <span>S2 (Kelas)</span>
-              <span>S3 (Apel)</span>
             </div>
 
             <div className="space-y-2 mt-2">
               {dynamicHeatmapData.map((row, i) => (
-                <div key={i} className={`grid grid-cols-4 gap-2 text-xs items-center p-1 rounded-md ${row.isToday ? 'bg-blue-50/50 font-bold' : ''}`}>
+                <div key={i} className={`grid grid-cols-3 gap-2 text-xs items-center p-1 rounded-md ${row.isToday ? 'bg-blue-50/50 font-bold' : ''}`}>
                   <span className={`text-left font-mono text-xs ${row.isToday ? 'text-blue-700 font-bold' : 'text-slate-600'}`}>
                     {row.day} {row.isToday && '(Today)'}
                   </span>
@@ -620,10 +580,6 @@ export default function AttendanceView({
                   
                   <div title={`${row.day} Sesi 2`} className={`h-5 rounded-md transition-all ${
                     row.class === 'green' ? 'bg-emerald-500' : row.class === 'amber' ? 'bg-amber-400' : row.class === 'gray' ? 'bg-slate-200' : 'bg-rose-500'
-                  }`} />
-
-                  <div title={`${row.day} Sesi 3`} className={`h-5 rounded-md transition-all ${
-                    row.evening === 'green' ? 'bg-emerald-500' : row.evening === 'amber' ? 'bg-amber-400' : row.evening === 'gray' ? 'bg-slate-200' : 'bg-rose-500'
                   }`} />
                 </div>
               ))}
